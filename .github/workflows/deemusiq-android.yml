@@ -90,7 +90,11 @@ jobs:
       - name: Collect APK
         run: |
           mkdir -p dist
-          src=$(find build -name "*-stable-release.apk" -o -name "*.apk" | head -1)
+          # Prefer the flavored release APK; fall back deterministically.
+          src=$(find build -name "app-stable-release.apk" -print -quit)
+          [ -z "$src" ] && src=$(find build -name "*-release.apk" -print -quit)
+          [ -z "$src" ] && src=$(find build -name "*.apk" -print -quit)
+          if [ -z "$src" ]; then echo "::error::No APK found under build/"; exit 1; fi
           echo "Found APK: $src"
           cp "$src" dist/DeeMusiq.apk
           ls -la dist

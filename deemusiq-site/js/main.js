@@ -113,10 +113,13 @@
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       if (!form.reportValidity()) return;
-      var name = (form.name.value || "").trim();
-      var email = (form.email.value || "").trim();
-      var topic = form.topic.value;
-      var message = (form.message.value || "").trim();
+      // Use the form controls collection — `form.name` would resolve to the
+      // form's own `name` attribute, not the <input name="name"> field.
+      var els = form.elements;
+      var name = (els.namedItem("name").value || "").trim();
+      var email = (els.namedItem("email").value || "").trim();
+      var topic = els.namedItem("topic").value;
+      var message = (els.namedItem("message").value || "").trim();
       var subject = "[DeeMusiq] " + topic + " — " + name;
       var body =
         "Name: " + name + "\n" +
