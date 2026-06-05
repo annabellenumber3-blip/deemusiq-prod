@@ -322,3 +322,13 @@ a{color:inherit;text-decoration:none}
   .hero__meta{gap:1.1rem}
   .drop{transform:none}
 }
+
+/* ---------- Gradient-text fallback: never render headlines invisible ----------
+   Browsers without background-clip:text would show transparent text otherwise. */
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .hero__title .hl,.stat b{
+    background:none;
+    -webkit-text-fill-color:currentColor;
+    color:var(--orange);
+  }
+}

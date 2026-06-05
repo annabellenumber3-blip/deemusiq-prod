@@ -5,6 +5,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-06-05 — Code audit pass #3 (applicationId blast-radius + CSS robustness)
+
+#### Fixed
+- **Gradient headlines could render invisible on browsers without `background-clip:text`.**
+  `.hero__title .hl` ("drop day.") and `.stat b` set `-webkit-text-fill-color:transparent`
+  with no fallback, so an unsupported browser would show transparent glyphs. Added an
+  `@supports not (… background-clip:text)` rule restoring solid orange text. (`css/styles.css`)
+
+#### Verified (changing an Android applicationId is a classic rebrand footgun — checked the blast radius)
+- **No Firebase** (`google-services.json` absent) → no package-name build mismatch.
+- **OAuth/deep-link scheme is `spotube://`, unchanged and platform-consistent** (Android
+  intent-filter; iOS/macOS declare no extra scheme). Only `applicationId` changed
+  (`za.co.deemusiq.app`), so Spotify login redirects still resolve. No stray `deemusiq://`
+  scheme was introduced anywhere — a half-rename there would silently break login.
+- **`namespace` + all Kotlin packages stayed `oss.krtirtho.spotube`** (MainActivity, the
+  home-screen "glance" widget classes, proguard `-keepnames`) — internally consistent;
+  AGP permits `applicationId ≠ namespace`, so the build is unaffected.
+
 ### 2026-06-05 — Code audit pass #2 (rebrand integrity + crash-path verification)
 
 Went deeper into the files the rebrand touched. **No new fixes required** — all edits
