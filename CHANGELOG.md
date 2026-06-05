@@ -5,6 +5,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-06-05 — Code audit pass #2 (rebrand integrity + crash-path verification)
+
+Went deeper into the files the rebrand touched. **No new fixes required** — all edits
+are structurally valid and the one risky Dart change is confirmed safe (not assumed).
+
+#### Verified
+- **All 30 localization `.arb` files still parse as valid JSON** after the blanket
+  `Spotube`→`DeeMusiq` value replacement (l10n keys are lowercase `spotube`, untouched).
+- **`pubspec.yaml` and `flutter_launcher_icons.yaml` parse as valid YAML**; the four
+  edited iOS `*.plist` files are well-formed XML.
+- **Accent-colour default is NOT a crash path** (this was a genuine concern).
+  `SpotubeColor(0xFFFF5722, …)` is type-valid (`SpotubeColor extends Color`, int arg).
+  The picker's `firstWhere` (`color_scheme_picker_dialog.dart:109`) iterates the
+  palette's *own* elements, so it always matches; the active-swatch lookup uses
+  `firstWhereOrNull` (null-safe). Worst case: no preset pre-highlighted — cosmetic.
+- **Website structure**: no duplicate `id`s, no dangling `#anchor` links, balanced
+  `section`/`form`/`main`/`header`/`footer` tags.
+
 ### 2026-06-05 — Code audit pass #1 (bugs / unsafe handling / CI robustness)
 
 Scope: the DeeMusiq-authored code — the website (`deemusiq-site/`), the CI
