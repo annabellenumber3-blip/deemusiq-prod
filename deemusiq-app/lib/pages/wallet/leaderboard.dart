@@ -8,7 +8,9 @@ import 'package:deemusiq/components/titlebar/titlebar.dart';
 import 'package:deemusiq/components/wallet/push_song_dialog.dart';
 import 'package:deemusiq/components/wallet/wallet_common.dart';
 import 'package:deemusiq/models/wallet/pushed_song.dart';
+import 'package:deemusiq/provider/wallet/leaderboard_provider.dart';
 import 'package:deemusiq/provider/wallet/wallet_provider.dart';
+import 'package:deemusiq/services/wallet/wallet_api.dart';
 
 @RoutePage()
 class PushLeaderboardPage extends HookConsumerWidget {
@@ -16,11 +18,40 @@ class PushLeaderboardPage extends HookConsumerWidget {
 
   const PushLeaderboardPage({super.key});
 
+  /// Adapts a global entry to the tile's [PushedSong] shape (lastPushedAt is
+  /// not shown on the board, so a zero epoch placeholder is fine).
+  static PushedSong _toSong(LeaderboardEntry e) => PushedSong(
+        id: e.songId,
+        title: e.title,
+        artist: e.artist,
+        artistId: e.artistId,
+        imageUrl: e.imageUrl,
+        totalTokens: e.totalTokens,
+        pushCount: e.pushCount,
+        lastPushedAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+
+  Widget _emptyCard() {
+    return Card(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          const Icon(DeeMusiqIcons.boost, size: 32, color: deeMusiqOrange),
+          const Gap(10),
+          const Text("Nothing trending yet").semiBold(),
+          const Gap(4),
+          const Text(
+            "Push a song from its menu or the player to start the board.",
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pushed = ref.watch(walletProvider.select((s) => s.pushedSongs));
-    final ranked = [...pushed]
-      ..sort((a, b) => b.totalTokens.compareTo(a.totalTokens));
+    final online = WalletApiClient.instance.isConfigured;
 
     return SafeArea(
       bottom: false,
@@ -42,45 +73,32 @@ class PushLeaderboardPage extends HookConsumerWidget {
                       fillColor: context.theme.colorScheme.muted,
                       padding: const EdgeInsets.all(12),
                       child: Row(
-                        children: const [
-                          Icon(DeeMusiqIcons.trophy, color: deeMusiqOrange),
-                          Gap(10),
-                          Expanded(
+                        children: [
+                          const Icon(DeeMusiqIcons.trophy,
+                              color: deeMusiqOrange),
+                          const Gap(10),
+                          const Expanded(
                             child: Text(
                               "The most-pushed songs rise to the top. Push your "
                               "favourites to move them up the board.",
                             ),
                           ),
+                          if (online)
+                            Button.ghost(
+                              leading:
+                                  const Icon(DeeMusiqIcons.refresh, size: 16),
+                              onPressed: () =>
+                                  ref.invalidate(leaderboardProvider),
+                              child: const Text("Refresh"),
+                            ),
                         ],
                       ),
                     ),
                     const Gap(16),
-                    if (ranked.isEmpty)
-                      Card(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            const Icon(DeeMusiqIcons.boost,
-                                size: 32, color: deeMusiqOrange),
-                            const Gap(10),
-                            const Text("Nothing trending yet").semiBold(),
-                            const Gap(4),
-                            const Text(
-                              "Push a song from its menu or the player to start the board.",
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
+                    if (online)
+                      _globalBoard(ref)
                     else
-                      for (final entry in ranked.asMap().entries)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _LeaderTile(
-                            rank: entry.key + 1,
-                            song: entry.value,
-                          ),
-                        ),
+                      _localBoard(ref),
                     const Gap(40),
                   ],
                 ),
@@ -89,6 +107,78 @@ class PushLeaderboardPage extends HookConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  /// The global cross-user board from the backend, with loading/error states.
+  Widget _globalBoard(WidgetRef ref) {
+    final board = ref.watch(leaderboardProvider);
+    return board.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Card(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const Icon(DeeMusiqIcons.info, size: 28, color: deeMusiqOrange),
+            const Gap(10),
+            const Text("Couldn't load the board").semiBold(),
+            const Gap(4),
+            Text(
+              error is WalletApiException ? error.message : error.toString(),
+              textAlign: TextAlign.center,
+            ).muted().small(),
+            const Gap(12),
+            Button.outline(
+              onPressed: () => ref.invalidate(leaderboardProvider),
+              child: const Text("Retry"),
+            ),
+          ],
+        ),
+      ),
+      data: (entries) => entries.isEmpty
+          ? _emptyCard()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final entry in entries)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _LeaderTile(
+                      rank: entry.rank,
+                      song: _toSong(entry),
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
+
+  /// Offline fallback: this device's own pushes, clearly labelled.
+  Widget _localBoard(WidgetRef ref) {
+    final pushed = ref.watch(walletProvider.select((s) => s.pushedSongs));
+    final ranked = [...pushed]
+      ..sort((a, b) => b.totalTokens.compareTo(a.totalTokens));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text("Your pushes (offline)").muted().xSmall(),
+        const Gap(8),
+        if (ranked.isEmpty)
+          _emptyCard()
+        else
+          for (final entry in ranked.asMap().entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _LeaderTile(
+                rank: entry.key + 1,
+                song: entry.value,
+              ),
+            ),
+      ],
     );
   }
 }

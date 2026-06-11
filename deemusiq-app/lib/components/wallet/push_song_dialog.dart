@@ -70,7 +70,10 @@ class PushSongDialog extends HookConsumerWidget {
         );
         Navigator.pop(context);
       } else {
-        showWalletToast(context, "Not enough tokens for that push");
+        // Online failures (backend refused / unreachable) set lastActionError;
+        // otherwise the push was blocked by the local balance check.
+        final reason = ref.read(walletProvider.notifier).lastActionError;
+        showWalletToast(context, reason ?? "Not enough tokens for that push");
       }
     }
 

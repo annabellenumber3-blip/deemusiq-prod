@@ -92,13 +92,9 @@ abstract class PaymentGatewayConfig {
   /// backend's `PAYMENTS_ZA_ONLY`.
   static const bool paymentsZaOnly = true;
 
-  /// Receiving wallet addresses per crypto rail. Empty = not configured.
-  static const Map<PaymentMethodKind, String> cryptoAddresses = {
-    PaymentMethodKind.bitcoin: "",
-    PaymentMethodKind.ethereum: "",
-    PaymentMethodKind.monero: "",
-    PaymentMethodKind.usdt: "",
-  };
+  // NOTE: deposit addresses are NOT configured app-side. The backend owns the
+  // receiving wallets (env `CRYPTO_ADDR_*`) and returns them per-checkout in
+  // the `/payments/checkout` crypto response (see [CryptoDepositInfo]).
 
   static const Map<PaymentMethodKind, String> cryptoNetworks = {
     PaymentMethodKind.bitcoin: "Bitcoin mainnet",

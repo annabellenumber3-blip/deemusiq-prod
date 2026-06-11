@@ -18,6 +18,11 @@ import 'package:uuid/uuid.dart';
 class WalletNotifier extends Notifier<WalletState> {
   static const _uuid = Uuid();
 
+  /// Human-readable reason the last online push/support failed (null = none).
+  /// Set right before [pushSong]/[supportCreator] return false so the UI can
+  /// distinguish a backend refusal from a plain insufficient balance.
+  String? lastActionError;
+
   @override
   WalletState build() {
     return WalletPersistence.load();
@@ -65,7 +70,8 @@ class WalletNotifier extends Notifier<WalletState> {
   }
 
   /// Pays [tokens] to push a song up the charts. Returns false (no-op) if the
-  /// balance is insufficient.
+  /// balance is insufficient or, online, if the backend refuses the spend
+  /// ([lastActionError] then carries the reason).
   Future<bool> pushSong({
     required String songId,
     required String title,
@@ -74,9 +80,45 @@ class WalletNotifier extends Notifier<WalletState> {
     String? imageUrl,
     required int tokens,
   }) async {
-    if (tokens <= 0 || tokens > state.balance) return false;
+    lastActionError = null;
+    if (tokens <= 0) return false;
+    // Offline, the local ledger gates the spend. Online, the server is the
+    // ledger — a stale-low local balance must not block a server-valid spend.
+    if (!WalletApiClient.instance.isConfigured && tokens > state.balance) {
+      return false;
+    }
 
     final now = DateTime.now();
+
+    if (WalletApiClient.instance.isConfigured) {
+      // Online: the server is the ledger. Only mutate local state after the
+      // spend succeeded — an API failure must never debit the wallet here too.
+      if (!await _spendOnline(() => WalletApiClient.instance.pushSong(
+            songId: songId,
+            title: title,
+            artist: artist,
+            artistId: artistId,
+            imageUrl: imageUrl,
+            tokens: tokens,
+          ))) {
+        return false;
+      }
+      // Keep this device's push aggregate for the offline trending view; the
+      // authoritative ledger/creators are pulled from the server below.
+      await _commit(state.copyWith(
+        pushedSongs: _withPushAggregate(
+          songId: songId,
+          title: title,
+          artist: artist,
+          artistId: artistId,
+          imageUrl: imageUrl,
+          tokens: tokens,
+          at: now,
+        ),
+      ));
+      await syncFromBackend();
+      return true;
+    }
 
     final tx = TokenTransaction(
       id: _uuid.v4(),
@@ -90,32 +132,17 @@ class WalletNotifier extends Notifier<WalletState> {
       artistName: artist,
     );
 
-    // Update the per-song push aggregate.
-    final pushed = [...state.pushedSongs];
-    final songIdx = pushed.indexWhere((s) => s.id == songId);
-    if (songIdx >= 0) {
-      final existing = pushed[songIdx];
-      pushed[songIdx] = existing.copyWith(
-        totalTokens: existing.totalTokens + tokens,
-        pushCount: existing.pushCount + 1,
-        lastPushedAt: now,
-      );
-    } else {
-      pushed.add(PushedSong(
-        id: songId,
+    await _commit(state.copyWith(
+      transactions: _prepend(tx),
+      pushedSongs: _withPushAggregate(
+        songId: songId,
         title: title,
         artist: artist,
         artistId: artistId,
         imageUrl: imageUrl,
-        totalTokens: tokens,
-        pushCount: 1,
-        lastPushedAt: now,
-      ));
-    }
-
-    await _commit(state.copyWith(
-      transactions: _prepend(tx),
-      pushedSongs: pushed,
+        tokens: tokens,
+        at: now,
+      ),
       supportedCreators: _withCreatorContribution(
         creatorId: artistId ?? artist,
         name: artist,
@@ -127,14 +154,32 @@ class WalletNotifier extends Notifier<WalletState> {
     return true;
   }
 
-  /// Directly supports a creator with tokens. Returns false if balance is low.
+  /// Directly supports a creator with tokens. Returns false if balance is low
+  /// or, online, if the backend refuses ([lastActionError] carries the reason).
   Future<bool> supportCreator({
     required String creatorId,
     required String name,
     String? imageUrl,
     required int tokens,
   }) async {
-    if (tokens <= 0 || tokens > state.balance) return false;
+    lastActionError = null;
+    if (tokens <= 0) return false;
+    // Same gating as pushSong: local balance only matters offline.
+    if (!WalletApiClient.instance.isConfigured && tokens > state.balance) {
+      return false;
+    }
+
+    if (WalletApiClient.instance.isConfigured) {
+      if (!await _spendOnline(() => WalletApiClient.instance.supportCreator(
+            creatorId: creatorId,
+            name: name,
+            tokens: tokens,
+          ))) {
+        return false;
+      }
+      await syncFromBackend();
+      return true;
+    }
 
     final now = DateTime.now();
     final tx = TokenTransaction(
@@ -158,6 +203,58 @@ class WalletNotifier extends Notifier<WalletState> {
       ),
     ));
     return true;
+  }
+
+  /// Runs one backend spend call; on failure records a friendly reason in
+  /// [lastActionError] and returns false WITHOUT touching local state.
+  Future<bool> _spendOnline(Future<int> Function() spend) async {
+    try {
+      await spend();
+      return true;
+    } on WalletApiException catch (e) {
+      lastActionError = e.message == "insufficient_balance"
+          ? "Not enough tokens — your balance may have changed."
+          : e.message;
+      return false;
+    } catch (e, stack) {
+      AppLogger.reportError(e, stack);
+      lastActionError = "Couldn't reach DeeMusiq — nothing was charged.";
+      return false;
+    }
+  }
+
+  /// The per-song push aggregate with one more push applied.
+  List<PushedSong> _withPushAggregate({
+    required String songId,
+    required String title,
+    required String artist,
+    String? artistId,
+    String? imageUrl,
+    required int tokens,
+    required DateTime at,
+  }) {
+    final pushed = [...state.pushedSongs];
+    final songIdx = pushed.indexWhere((s) => s.id == songId);
+    if (songIdx >= 0) {
+      final existing = pushed[songIdx];
+      pushed[songIdx] = existing.copyWith(
+        totalTokens: existing.totalTokens + tokens,
+        pushCount: existing.pushCount + 1,
+        lastPushedAt: at,
+      );
+    } else {
+      pushed.add(PushedSong(
+        id: songId,
+        title: title,
+        artist: artist,
+        artistId: artistId,
+        imageUrl: imageUrl,
+        totalTokens: tokens,
+        pushCount: 1,
+        lastPushedAt: at,
+      ));
+    }
+    return pushed;
   }
 
   List<SupportedCreator> _withCreatorContribution({
@@ -209,11 +306,19 @@ class WalletNotifier extends Notifier<WalletState> {
     await _commit(state.copyWith(linkedAccounts: accounts));
   }
 
+  /// Disconnects [provider]. Online this goes through the backend (throws
+  /// [WalletApiException] on failure, leaving local state untouched) and then
+  /// re-syncs; offline it is a purely local removal.
   Future<void> unlinkAccount(LinkedProvider provider) async {
+    final online = WalletApiClient.instance.isConfigured;
+    if (online) {
+      await WalletApiClient.instance.unlinkAccount(provider.name);
+    }
     await _commit(state.copyWith(
       linkedAccounts:
           state.linkedAccounts.where((a) => a.provider != provider).toList(),
     ));
+    if (online) await syncFromBackend();
   }
 
   LinkedAccount? linkedAccountFor(LinkedProvider provider) {

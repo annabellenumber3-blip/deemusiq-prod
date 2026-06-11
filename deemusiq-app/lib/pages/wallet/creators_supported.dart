@@ -120,11 +120,14 @@ class _CreatorTile extends ConsumerWidget {
           tokens: tokens,
         );
     if (context.mounted) {
+      // Online failures (backend refused / unreachable) set lastActionError;
+      // otherwise the spend was blocked by the local balance check.
+      final reason = ref.read(walletProvider.notifier).lastActionError;
       showWalletToast(
         context,
         ok
             ? "Sent $tokens tokens to ${creator.name}"
-            : "Not enough tokens",
+            : reason ?? "Not enough tokens",
         icon: DeeMusiqIcons.heart,
       );
     }

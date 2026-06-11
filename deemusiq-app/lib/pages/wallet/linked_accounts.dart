@@ -1,5 +1,4 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shadcn_flutter/shadcn_flutter_extension.dart';
@@ -8,6 +7,8 @@ import 'package:deemusiq/components/titlebar/titlebar.dart';
 import 'package:deemusiq/components/wallet/wallet_common.dart';
 import 'package:deemusiq/models/wallet/linked_account.dart';
 import 'package:deemusiq/provider/wallet/wallet_provider.dart';
+import 'package:deemusiq/services/wallet/wallet_api.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 @RoutePage()
 class LinkedAccountsPage extends HookConsumerWidget {
@@ -19,6 +20,7 @@ class LinkedAccountsPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(walletProvider.select((s) => s.linkedAccounts));
     final byProvider = {for (final a in accounts) a.provider: a};
+    final backendConfigured = WalletApiClient.instance.isConfigured;
 
     return SafeArea(
       bottom: false,
@@ -39,11 +41,16 @@ class LinkedAccountsPage extends HookConsumerWidget {
                       filled: true,
                       fillColor: context.theme.colorScheme.muted,
                       padding: const EdgeInsets.all(12),
-                      child: const Text(
-                        "Connect your accounts on other services to bring your "
-                        "playlists and favourites into DeeMusiq. Real linking uses "
-                        "each provider's secure login (OAuth) — add the provider's "
-                        "client credentials to enable it.",
+                      child: Text(
+                        backendConfigured
+                            ? "Connect your accounts on other services to bring "
+                                "your playlists and favourites into DeeMusiq. "
+                                "Connecting opens that provider's secure login "
+                                "(OAuth) in your browser, then returns you here."
+                            : "Account linking needs a DeeMusiq connection — "
+                                "this build is offline, so connecting is "
+                                "disabled. You can still disconnect accounts "
+                                "stored on this device.",
                       ).muted().small(),
                     ),
                     const Gap(16),
@@ -53,6 +60,7 @@ class LinkedAccountsPage extends HookConsumerWidget {
                         child: _ProviderTile(
                           provider: provider,
                           account: byProvider[provider],
+                          backendConfigured: backendConfigured,
                         ),
                       ),
                     const Gap(40),
@@ -70,22 +78,64 @@ class LinkedAccountsPage extends HookConsumerWidget {
 class _ProviderTile extends ConsumerWidget {
   final LinkedProvider provider;
   final LinkedAccount? account;
+  final bool backendConfigured;
 
-  const _ProviderTile({required this.provider, this.account});
+  const _ProviderTile({
+    required this.provider,
+    required this.backendConfigured,
+    this.account,
+  });
 
+  /// Starts the real OAuth flow: the backend returns an authorize URL that we
+  /// open in the external browser. The provider redirects back through the
+  /// backend, which deep-links into the app (`deemusiq://link`) — the
+  /// deep-link handler (see use_deep_linking.dart) then re-syncs the
+  /// authoritative linked-accounts list.
   Future<void> _connect(BuildContext context, WidgetRef ref) async {
-    final handle = await showDialog<String>(
-      context: context,
-      builder: (context) => _ConnectDialog(provider: provider),
-    );
-    if (handle == null || handle.trim().isEmpty) return;
-    await ref.read(walletProvider.notifier).linkAccount(
-          provider,
-          displayName: handle.trim(),
+    try {
+      final url = await WalletApiClient.instance.startLinking(provider.name);
+      final opened =
+          await launchUrlString(url, mode: LaunchMode.externalApplication);
+      if (context.mounted) {
+        showWalletToast(
+          context,
+          opened
+              ? "Finish connecting ${provider.label} in your browser"
+              : "Couldn't open your browser — try again",
+          icon: provider.icon,
         );
-    if (context.mounted) {
-      showWalletToast(context, "${provider.label} connected",
-          icon: DeeMusiqIcons.verified);
+      }
+    } on WalletApiException catch (e) {
+      if (!context.mounted) return;
+      showWalletToast(
+        context,
+        e.message == "provider_not_configured"
+            ? "${provider.label} linking isn't available yet — coming soon."
+            : e.message,
+        icon: DeeMusiqIcons.info,
+      );
+    } catch (_) {
+      // launchUrlString can throw (no browser/handler installed).
+      if (!context.mounted) return;
+      showWalletToast(
+        context,
+        "Couldn't open your browser — try again",
+        icon: DeeMusiqIcons.info,
+      );
+    }
+  }
+
+  Future<void> _disconnect(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(walletProvider.notifier).unlinkAccount(provider);
+      if (context.mounted) {
+        showWalletToast(context, "${provider.label} disconnected",
+            icon: provider.icon);
+      }
+    } on WalletApiException catch (e) {
+      if (context.mounted) {
+        showWalletToast(context, e.message, icon: DeeMusiqIcons.info);
+      }
     }
   }
 
@@ -132,60 +182,17 @@ class _ProviderTile extends ConsumerWidget {
           const Gap(10),
           if (connected)
             Button.outline(
-              onPressed: () =>
-                  ref.read(walletProvider.notifier).unlinkAccount(provider),
+              onPressed: () => _disconnect(context, ref),
               child: const Text("Disconnect"),
             )
           else
             Button.primary(
-              onPressed: () => _connect(context, ref),
+              onPressed:
+                  backendConfigured ? () => _connect(context, ref) : null,
               child: const Text("Connect"),
             ),
         ],
       ),
-    );
-  }
-}
-
-class _ConnectDialog extends HookWidget {
-  final LinkedProvider provider;
-  const _ConnectDialog({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = useTextEditingController();
-
-    return AlertDialog(
-      title: Text("Connect ${provider.label}").large(),
-      content: SizedBox(
-        width: 360,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "In a live build this opens ${provider.label}'s secure login. "
-              "For now, enter the username/handle to show as connected.",
-            ).muted().small(),
-            const Gap(12),
-            TextField(
-              controller: controller,
-              placeholder: Text("${provider.label} username"),
-              onSubmitted: (value) => Navigator.pop(context, value),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        Button.outline(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Cancel"),
-        ),
-        Button.primary(
-          onPressed: () => Navigator.pop(context, controller.text),
-          child: const Text("Connect"),
-        ),
-      ],
     );
   }
 }

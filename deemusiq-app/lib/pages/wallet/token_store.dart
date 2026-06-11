@@ -9,6 +9,7 @@ import 'package:deemusiq/components/wallet/wallet_common.dart';
 import 'package:deemusiq/models/wallet/region_pricing.dart';
 import 'package:deemusiq/models/wallet/token_pack.dart';
 import 'package:deemusiq/provider/wallet/region_provider.dart';
+import 'package:deemusiq/provider/wallet/server_pricing_provider.dart';
 import 'package:deemusiq/provider/wallet/wallet_provider.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
@@ -72,6 +73,9 @@ class TokenStorePage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final region = ref.watch(regionTierProvider);
     final balance = ref.watch(walletProvider.select((s) => s.balance));
+    // Server-authoritative packs/prices when the backend answers; null (and
+    // thus the local RegionTier math) while loading, offline or on any error.
+    final serverPacks = ref.watch(serverPricingProvider).valueOrNull;
 
     return SafeArea(
       bottom: false,
@@ -119,11 +123,22 @@ class TokenStorePage extends HookConsumerWidget {
                       "Prices for ${region.label} · adjusted for your region.",
                     ).muted().small(),
                     const Gap(16),
-                    for (final pack in TokenPack.all)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _PackCard(pack: pack, region: region),
-                      ),
+                    if (serverPacks != null)
+                      for (final priced in serverPacks)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _PackCard(
+                            pack: priced.pack,
+                            region: region,
+                            priceLabel: priced.priceLabel,
+                          ),
+                        )
+                    else
+                      for (final pack in TokenPack.all)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _PackCard(pack: pack, region: region),
+                        ),
                     const Gap(12),
                     Card(
                       filled: true,
@@ -163,7 +178,11 @@ class TokenStorePage extends HookConsumerWidget {
 class _PackCard extends StatelessWidget {
   final TokenPack pack;
   final RegionTier region;
-  const _PackCard({required this.pack, required this.region});
+
+  /// Server-formatted price (e.g. "R59.00"). Null = price locally.
+  final String? priceLabel;
+
+  const _PackCard({required this.pack, required this.region, this.priceLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +240,7 @@ class _PackCard extends StatelessWidget {
           const Gap(12),
           Button.primary(
             onPressed: () => showPurchaseTokensDialog(context, pack: pack),
-            child: Text(region.formatPrice(pack.basePriceZar)),
+            child: Text(priceLabel ?? region.formatPrice(pack.basePriceZar)),
           ),
         ],
       ),

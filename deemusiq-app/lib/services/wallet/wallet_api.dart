@@ -73,6 +73,20 @@ class WalletApiClient {
           handler.next(response);
         },
         onError: (e, handler) {
+          // Error bodies are sealed too when the secure channel is on —
+          // unseal so _message() can read the server's error code.
+          final resp = e.response;
+          if (resp != null &&
+              resp.headers.value(SecureChannel.headerName) == "1" &&
+              SecureChannel.isEnvelope(resp.data)) {
+            try {
+              resp.data = jsonDecode(
+                SecureChannel.open(Map<String, dynamic>.from(resp.data as Map)),
+              );
+            } catch (_) {
+              // Undecryptable envelope — fall through to the generic message.
+            }
+          }
           // A cached JWT that expired/was revoked → 401. Drop it so the next
           // call re-authenticates (Ed25519 challenge-response) instead of
           // cascading 401s forever.
@@ -266,6 +280,19 @@ class WalletApiClient {
     }
   }
 
+  /// Disconnects a linked provider on the backend
+  /// (`DELETE /link/accounts/:provider`).
+  Future<void> unlinkAccount(String provider) async {
+    try {
+      await _client().delete(
+        "/link/accounts/$provider",
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
   Future<Options> _authed() async =>
       Options(headers: {"Authorization": "Bearer ${await _authToken()}"});
 
@@ -321,8 +348,10 @@ class WalletApiClient {
           "songId": songId,
           "title": title,
           "artist": artist,
-          "artistId": artistId,
-          "imageUrl": imageUrl,
+          // Omit absent optionals entirely: the backend's zod schema accepts
+          // missing fields but rejects explicit JSON nulls with a 400.
+          if (artistId != null) "artistId": artistId,
+          if (imageUrl != null) "imageUrl": imageUrl,
           "tokens": tokens,
         },
         options: await _authed(),
