@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
+import 'package:deemusiq/services/integrity/integrity_service.dart';
 import 'package:deemusiq/services/wallet/device_identity.dart';
 import 'package:deemusiq/services/wallet/secure_channel.dart';
 import 'package:uuid/uuid.dart';
@@ -149,13 +150,26 @@ class WalletApiClient {
         data: {"deviceId": deviceId},
       );
       final challenge = (challengeRes.data as Map)["challenge"] as String;
+
+      // Client attestation: when this build can report its cert + APK hashes,
+      // sign them INTO the challenge so the backend can verify the binding and
+      // refuse repackaged builds. Otherwise fall back to signing the bare
+      // challenge (the backend treats that as "no attestation").
+      final att = await IntegrityService.instance.attestation();
+      final hasAttestation = att.cert != null || att.apk != null;
+      final message = hasAttestation
+          ? "$challenge|${att.cert ?? ''}|${att.apk ?? ''}"
+          : challenge;
+
       final loginRes = await dio.post(
         "/auth/device/login",
         data: {
           "deviceId": deviceId,
           "publicKey": await DeviceIdentity.instance.publicKeyBase64(),
           "challenge": challenge,
-          "signature": await DeviceIdentity.instance.sign(challenge),
+          "signature": await DeviceIdentity.instance.sign(message),
+          if (att.cert != null) "certSha256": att.cert,
+          if (att.apk != null) "apkSha256": att.apk,
         },
       );
       final token = (loginRes.data as Map)["token"] as String;

@@ -5,6 +5,39 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-06-12 — De-Spotify: in-house metadata engine + server attestation + Vault-required
+
+#### Added (backend — `s-b-repo/deemusiq-backend`)
+- **In-house metadata engine that replaces Spotify.** New Prisma models
+  Artist/Album/Track/Playlist with multi-source audio (`youtube | url | object`),
+  so a track plays from an unlisted YouTube video, a direct https file, or a
+  low-risk object store/CDN (Cloudflare R2, Bunny, any S3-compatible bucket via
+  `OBJECT_STORAGE_BASE_URL`). Public read API `GET /metadata/{search,home,
+  artist/:id,album/:id,playlist/:id,track/:id}` returns a ready-to-play `source`;
+  admin CRUD under `/catalog/*`. Replaces the flat `Song` model.
+- **Server-side client attestation before login.** `/auth/device/login` accepts
+  a cert+APK hash the client signs INTO the challenge (`challenge|cert|apk`), so
+  a MITM can't swap them. With `EXPECTED_CERT_SHA256` pinned, a non-matching cert
+  is refused (`untrusted_client`); `REQUIRE_CLIENT_ATTESTATION` makes it
+  mandatory. Layers: server nonce + signed binding + cert pin + rate-limit. The
+  app now sends this attestation at login. (Honest limit: no hardware attestation.)
+- **Vault/OpenBao required in production** — the server refuses to boot without
+  it (dev/test keep the local AES-256-GCM fallback).
+
+#### Removed
+- **All Spotify.** Deleted the Spotify OAuth account-linking feature (its only
+  provider): `providers/oauth/`, `routes/linking.ts`, the `LinkedAccount` model,
+  `env.spotify`, the `/link` mount, and the Vault Spotify-key hydration. DeeMusiq
+  is a Spotify alternative; its own catalog is the metadata source.
+
+Backend: 35 vitest cases pass; build + prod-boot-guard verified locally.
+
+> **Known follow-up (app phase, not yet done):** the Flutter app still uses the
+> `hetu_spotube_plugin` metadata engine and has dead calls to the removed
+> `/link/*` and old `/catalog` endpoints (they fail gracefully). Rewiring the app
+> to the new `/metadata` API and stripping the Spotify engine/UI is the next
+> phase and needs an emulator for full runtime verification.
+
 ### 2026-06-11 — Anti-tamper / app integrity
 
 #### Added

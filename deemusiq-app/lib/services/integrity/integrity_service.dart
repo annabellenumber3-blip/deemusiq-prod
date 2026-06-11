@@ -90,6 +90,12 @@ class IntegrityService {
     }
   }
 
+  /// Current device-build hashes for login attestation, or null off Android /
+  /// when unreadable. The backend binds these into the signed challenge.
+  Future<({String? cert, String? apk})> attestation() async {
+    return (cert: await _certHash(), apk: await _apkHash());
+  }
+
   /// LOCAL, offline boot gate. Returns false ONLY when the certificate is
   /// pinned ([expectedCertSha256] set) and the running build is signed with a
   /// different key (a repackaged APK). Returns true in every other case — not
