@@ -44,7 +44,9 @@ class MetadataPlugin {
     hetu.init();
 
     HetuStdLoader.loadBindings(hetu);
-    HetuDeeMusiqPluginLoader.loadBindings(
+    // Class name comes from the external hetu_spotube_plugin package —
+    // deliberately not rebranded (see README.DEEMUSIQ.md accepted naming).
+    HetuSpotubePluginLoader.loadBindings(
       hetu,
       localStorageImpl: SharedPreferencesLocalStorage(
         sharedPreferences,
@@ -137,7 +139,7 @@ class MetadataPlugin {
 
     await HetuStdLoader.loadBytecodeFlutter(hetu);
     await HetuOtpUtilLoader.loadBytecodeFlutter(hetu);
-    await HetuDeeMusiqPluginLoader.loadBytecodeFlutter(hetu);
+    await HetuSpotubePluginLoader.loadBytecodeFlutter(hetu);
 
     hetu.loadBytecode(bytes: byteCode, moduleName: "plugin");
     hetu.eval("""

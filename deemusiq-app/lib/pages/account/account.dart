@@ -184,8 +184,9 @@ class _TotpCard extends HookConsumerWidget {
             children: [
               const Icon(DeeMusiqIcons.shield, color: deeMusiqOrange),
               const Gap(8),
-              const Expanded(
-                child: Text("Two-factor authentication (2FA)").semiBold(),
+              // .semiBold() is an extension call — not const-evaluable.
+              Expanded(
+                child: const Text("Two-factor authentication (2FA)").semiBold(),
               ),
             ],
           ),
@@ -268,8 +269,8 @@ class _RecoveryCard extends HookConsumerWidget {
             children: [
               const Icon(DeeMusiqIcons.refresh, color: deeMusiqOrange),
               const Gap(8),
-              const Expanded(
-                child: Text("Recover with your authenticator").semiBold(),
+              Expanded(
+                child: const Text("Recover with your authenticator").semiBold(),
               ),
             ],
           ),
@@ -355,11 +356,11 @@ class _SecurityActionsCard extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(DeeMusiqIcons.lock, color: deeMusiqOrange),
-              Gap(8),
-              Expanded(child: Text("Security").semiBold()),
+              const Icon(DeeMusiqIcons.lock, color: deeMusiqOrange),
+              const Gap(8),
+              Expanded(child: const Text("Security").semiBold()),
             ],
           ),
           const Gap(12),

@@ -9,7 +9,7 @@ import 'package:encrypt/encrypt.dart';
 import 'package:media_kit/media_kit.dart' hide Track;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' show ThemeMode, Colors;
+import 'package:shadcn_flutter/shadcn_flutter.dart' show ThemeMode;
 import 'package:deemusiq/models/database/database.steps.dart';
 import 'package:deemusiq/models/lyrics.dart';
 import 'package:deemusiq/models/metadata/market.dart';
