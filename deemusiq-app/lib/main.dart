@@ -119,7 +119,8 @@ Future<void> main(List<String> rawArgs) async {
     }
 
     if (kIsIOS) {
-      HomeWidget.setAppGroupId("group.spotube_home_player_widget");
+      // Must match the iOS app-group entitlement when an iOS build ships.
+      HomeWidget.setAppGroupId("group.deemusiq_home_player_widget");
     }
 
     runApp(

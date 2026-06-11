@@ -3,10 +3,10 @@ description: DeeMusiq - African music streaming and download platform. It is a d
 
 publish_to: "none"
 
-version: 5.1.2+45
+version: 1.0.0+46
 
-homepage: https://spotube.krtirtho.dev
-repository: https://github.com/KRTirtho/spotube
+homepage: https://github.com/s-b-repo/deemusiq
+repository: https://github.com/s-b-repo/deemusiq
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -218,9 +218,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/logos/
-    - assets/branding/spotube-logo.png
-    - assets/branding/spotube-logo-light.png
-    - assets/branding/spotube-logo.ico
+    - assets/branding/deemusiq-logo.png
+    - assets/branding/deemusiq-logo.ico
     - assets/plugins/spotube-plugin-musicbrainz-listenbrainz/plugin.smplug
     - assets/plugins/spotube-plugin-youtube-audio/plugin.smplug
     - LICENSE

@@ -17,7 +17,7 @@ class GettingStartedPageGreetingSection extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Assets.branding.spotubeLogoPng.image(height: 200),
+            Assets.branding.deemusiqLogoPng.image(height: 200),
             const Gap(24),
             const Text("DeeMusiq").semiBold().h4(),
             const Gap(4),

@@ -3,14 +3,12 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:deemusiq/collections/assets.gen.dart';
 import 'package:deemusiq/collections/env.dart';
 import 'package:deemusiq/components/button/back_button.dart';
-import 'package:deemusiq/components/image/universal_image.dart';
 import 'package:deemusiq/components/links/hyper_link.dart';
 import 'package:deemusiq/components/titlebar/titlebar.dart';
 import 'package:deemusiq/extensions/context.dart';
 import 'package:deemusiq/hooks/controllers/use_package_info.dart';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:auto_route/auto_route.dart';
 
 final _licenseProvider = FutureProvider<String>((ref) async {
@@ -45,7 +43,7 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
-                Assets.branding.spotubeLogoPng.image(
+                Assets.branding.deemusiqLogoPng.image(
                   height: 200,
                   width: 200,
                 ),
@@ -62,14 +60,15 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                         },
                         defaultRowHeight: const FixedTableSize(40),
                         rows: [
-                          TableRow(
+                          // BSD-4-Clause attribution to upstream (NOTICE.md)
+                          const TableRow(
                             cells: [
-                              TableCell(child: Text(context.l10n.founder)),
+                              TableCell(child: Text("Built on")),
                               colon,
                               TableCell(
                                 child: Hyperlink(
-                                  context.l10n.kingkor_roy_tirtho,
-                                  "https://github.com/KRTirtho",
+                                  "Spotube by KRTirtho",
+                                  "https://github.com/KRTirtho/spotube",
                                 ),
                               )
                             ],
@@ -116,8 +115,8 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                               colon,
                               const TableCell(
                                 child: Hyperlink(
-                                  "github.com/KRTirtho/spotube",
-                                  "https://github.com/KRTirtho/spotube",
+                                  "github.com/s-b-repo/deemusiq",
+                                  "https://github.com/s-b-repo/deemusiq",
                                 ),
                               ),
                             ],
@@ -129,7 +128,7 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                               const TableCell(
                                 child: Hyperlink(
                                   "BSD-4-Clause",
-                                  "https://raw.githubusercontent.com/KRTirtho/spotube/master/LICENSE",
+                                  "https://raw.githubusercontent.com/s-b-repo/deemusiq/main/deemusiq-app/LICENSE",
                                 ),
                               ),
                             ],
@@ -140,8 +139,8 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                               colon,
                               const TableCell(
                                 child: Hyperlink(
-                                  "Discord#chat",
-                                  "https://discord.gg/uJ94vxB6vg",
+                                  "GitHub Issues",
+                                  "https://github.com/s-b-repo/deemusiq/issues",
                                 ),
                               ),
                             ],
@@ -152,22 +151,10 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () => launchUrl(
-                      Uri.parse("https://discord.gg/uJ94vxB6vg"),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                    child: const UniversalImage(
-                      path:
-                          "https://discord.com/api/guilds/1012234096237350943/widget.png?style=banner2",
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                // Plain string like the other DeeMusiq-specific surfaces; the
+                // upstream l10n value still credits Spotube's origin.
                 Text(
-                  context.l10n.made_with,
+                  "Made with ❤️ in South Africa 🇿🇦",
                   textAlign: TextAlign.center,
                   style: theme.typography.small,
                 ),

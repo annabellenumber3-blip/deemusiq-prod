@@ -37,7 +37,7 @@ class SyncedLyricsNotifier
       options: Options(
         headers: {
           "User-Agent":
-              "DeeMusiq v${packageInfo.version} (https://github.com/KRTirtho/spotube)"
+              "DeeMusiq v${packageInfo.version} (https://github.com/s-b-repo/deemusiq)"
         },
         responseType: ResponseType.json,
       ),

@@ -56,7 +56,7 @@ class GettingStartedScreenSupportSection extends HookConsumerWidget {
                       }),
                       onPressed: () async {
                         await launchUrlString(
-                          "https://github.com/KRTirtho/spotube",
+                          "https://github.com/s-b-repo/deemusiq",
                           mode: LaunchMode.externalApplication,
                         );
                       },
