@@ -83,9 +83,44 @@ which has a "Secrets you MUST change" section).
 | **Verification emails** | Backend `.env`: `SMTP_HOST/PORT/USER/PASS/FROM` | Logs-only until set (registration still works). |
 | **Spotify account linking** | Backend `.env`: `SPOTIFY_CLIENT_ID/SECRET`, redirect URI `https://<backend>/link/spotify/callback` (register it in the Spotify dev dashboard) | Other providers show "coming soon" until adapters exist. |
 | **Permanent signing keystore** | Repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` | See "Signing" above — **do this before the first public release.** |
+| **Anti-tamper cert pin** | Repo secret `DEEMUSIQ_CERT_SHA256` (+ optional backend `EXPECTED_CERT_SHA256`) | See "Anti-tamper" below. Arms the brick-on-repackage check. Set it right after the permanent keystore. |
 | **Site download link** | `deemusiq-site/js/main.js` | Android already wired; goes live with the first `v*` release. |
 | **Site social links** | `deemusiq-site/index.html` footer | Currently `#` placeholders — fill in when the accounts exist. |
 | **Release process** | — | Bump `pubspec.yaml` `x.y.z+N` → push tag `vx.y.z` → CI checks, builds, signs, attaches `DeeMusiq.apk` to the Release. |
+
+## 🛡️ Anti-tamper (stops fake / repackaged copies)
+
+The app verifies it hasn't been modified, on two independent levels:
+
+1. **Signing certificate (strong, offline).** A modified APK must be re-signed
+   with a different key, which changes its certificate hash. When you pin the
+   expected hash, the app **refuses to start** if it's signed with anything else.
+   This is the real protection and needs no internet.
+2. **Published APK hash (supplementary, online).** CI publishes
+   `DeeMusiq.apk.sha256` next to the APK on each release. At boot and again every
+   1–10 minutes the app hashes its own installed APK and compares. A confirmed
+   mismatch **locks the wallet/payments** (music keeps playing) and reports the
+   event to the backend (`/integrity/report`). If GitHub is unreachable, nothing
+   is locked — outages never punish real users.
+
+Crypto payments stay safe because the **deposit address is never in the app** —
+the backend owns it (`CRYPTO_ADDR_*`), sends it over the encrypted channel, and
+confirms funds on-chain. A fake app can't redirect a real top-up.
+
+**To arm the certificate brick (after you set the permanent keystore):**
+```bash
+keytool -list -v -keystore deemusiq.jks -alias deemusiq   # find the SHA256 line
+```
+Take that `SHA256:` fingerprint, remove the colons, lowercase it, and add it as
+the repo **secret** `DEEMUSIQ_CERT_SHA256`. (Optionally set the same value as the
+backend's `EXPECTED_CERT_SHA256` so tamper reports are annotated.) Until you set
+it, the certificate check is informational only — the temporary CI keystore
+changes every build and can't be pinned.
+
+> Honest limit: client-side checks defeat casual repackaging and give you
+> tamper telemetry, but they're not unbreakable DRM (that would need Google's
+> Play Integrity API, which requires Play Store distribution). The address being
+> server-owned is what actually protects users' money.
 
 ## 📌 Release rule (version numbering)
 

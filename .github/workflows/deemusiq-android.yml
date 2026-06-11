@@ -173,12 +173,17 @@ jobs:
         env:
           DEEMUSIQ_BACKEND_URL: ${{ vars.DEEMUSIQ_BACKEND_URL }}
           DEEMUSIQ_CHANNEL_KEY: ${{ secrets.DEEMUSIQ_CHANNEL_KEY }}
+          # SHA-256 of the PERMANENT signing certificate. When set, the app
+          # refuses to run if signed with any other key (anti-repackaging).
+          # Empty (temp keystore) = check is informational only.
+          DEEMUSIQ_CERT_SHA256: ${{ secrets.DEEMUSIQ_CERT_SHA256 }}
         run: >
           flutter build apk --release --flavor stable
           --dart-define=DEEMUSIQ_BACKEND_URL="${DEEMUSIQ_BACKEND_URL}"
           --dart-define=DEEMUSIQ_CHANNEL_KEY="${DEEMUSIQ_CHANNEL_KEY}"
+          --dart-define=DEEMUSIQ_CERT_SHA256="${DEEMUSIQ_CERT_SHA256}"
 
-      - name: Collect APK
+      - name: Collect APK + publish its hash
         run: |
           mkdir -p dist
           # Prefer the flavored release APK; fall back deterministically.
@@ -188,19 +193,24 @@ jobs:
           if [ -z "$src" ]; then echo "::error::No APK found under build/"; exit 1; fi
           echo "Found APK: $src"
           cp "$src" dist/DeeMusiq.apk
+          # The app fetches this to verify its own on-disk APK at runtime.
+          ( cd dist && sha256sum DeeMusiq.apk | awk '{print $1}' > DeeMusiq.apk.sha256 )
+          cat dist/DeeMusiq.apk.sha256
           ls -la dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: DeeMusiq-apk
-          path: deemusiq-app/dist/DeeMusiq.apk
+          path: deemusiq-app/dist/DeeMusiq.apk*
           if-no-files-found: error
 
       - name: Attach to GitHub Release (tag builds only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: deemusiq-app/dist/DeeMusiq.apk
+          files: |
+            deemusiq-app/dist/DeeMusiq.apk
+            deemusiq-app/dist/DeeMusiq.apk.sha256
           name: DeeMusiq ${{ github.ref_name }}
           body: |
             DeeMusiq Android app — *It's a drop day.*

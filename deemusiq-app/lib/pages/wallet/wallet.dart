@@ -10,6 +10,7 @@ import 'package:deemusiq/components/wallet/wallet_common.dart';
 import 'package:deemusiq/models/wallet/token_transaction.dart';
 import 'package:deemusiq/provider/wallet/region_provider.dart';
 import 'package:deemusiq/provider/wallet/wallet_provider.dart';
+import 'package:deemusiq/services/integrity/integrity_service.dart';
 
 @RoutePage()
 class WalletPage extends HookConsumerWidget {
@@ -46,6 +47,7 @@ class WalletPage extends HookConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const _IntegrityBanner(),
                     _BalanceHero(
                       balance: wallet.balance,
                       regionLabel: region.label,
@@ -322,6 +324,43 @@ class _EmptyActivity extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Warns the user (and disables purchases) when the integrity monitor has
+/// flagged a tampered/repackaged build. Hidden when everything checks out.
+class _IntegrityBanner extends StatelessWidget {
+  const _IntegrityBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<IntegrityVerdict>(
+      valueListenable: IntegrityService.instance.verdict,
+      builder: (context, verdict, _) {
+        if (verdict == IntegrityVerdict.ok) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFB3261E).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFB3261E)),
+          ),
+          child: Row(
+            children: [
+              const Icon(DeeMusiqIcons.shield, color: Color(0xFFB3261E)),
+              const Gap(10),
+              Expanded(
+                child: const Text(
+                  "This app may have been modified — payments are disabled. "
+                  "Reinstall the official DeeMusiq to use your wallet.",
+                ).small(),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -131,6 +131,9 @@ class WalletApiClient {
     return id;
   }
 
+  /// Stable per-install device id, shared with integrity telemetry.
+  String get deviceId => _deviceId();
+
   String? _token;
 
   /// Device login via Ed25519 challenge–response. The backend issues a signed

@@ -5,6 +5,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-06-11 — Anti-tamper / app integrity
+
+#### Added
+- **Signing-certificate brick (Android, offline).** Native `deemusiq/integrity`
+  channel returns the SHA-256 of the signing cert; when `DEEMUSIQ_CERT_SHA256`
+  is pinned (permanent keystore), a build signed with any other key refuses to
+  boot and shows a "modified app" screen. No-op for temp-keystore CI builds.
+- **Published APK-hash check (online).** CI now publishes `DeeMusiq.apk.sha256`
+  beside the release APK. At boot and on a random 1–10 minute interval the app
+  hashes its own installed APK and compares; a confirmed mismatch locks the
+  wallet/payments (playback unaffected) and reports to the backend. GitHub
+  unreachable ⇒ nothing locked.
+- **Backend `POST /integrity/report`** (open, plaintext-exempt, rate-limited) —
+  logs tamper telemetry via `log.security`; optional `EXPECTED_CERT_SHA256` env
+  annotates reports. +2 vitest cases (23 total).
+- Wallet purchases, pushes and creator support refuse when integrity is flagged;
+  a banner explains why on the wallet page.
+
+Crypto deposit addresses remain backend-owned (`CRYPTO_ADDR_*`) and delivered
+over the encrypted channel — never hardcoded in the app — so a repackaged build
+can't redirect a real top-up. Client checks are defense-in-depth + telemetry,
+not unbreakable DRM (Play Integrity would be the next step, but needs Play
+Store distribution).
+
 ### 2026-06-11 — Production-readiness pass (v1.0.0 release prep)
 
 #### Added

@@ -28,6 +28,7 @@ import 'package:deemusiq/hooks/configurators/use_get_storage_perms.dart';
 import 'package:deemusiq/hooks/configurators/use_has_touch.dart';
 import 'package:deemusiq/models/database/database.dart';
 import 'package:deemusiq/modules/settings/color_scheme_picker_dialog.dart';
+import 'package:deemusiq/pages/integrity/tampered.dart';
 import 'package:deemusiq/provider/audio_player/audio_player_streams.dart';
 import 'package:deemusiq/provider/database/database.dart';
 import 'package:deemusiq/provider/glance/glance.dart';
@@ -41,6 +42,7 @@ import 'package:deemusiq/provider/connect/clients.dart';
 import 'package:deemusiq/provider/user_preferences/user_preferences_provider.dart';
 import 'package:deemusiq/services/audio_player/audio_player.dart';
 import 'package:deemusiq/services/cli/cli.dart';
+import 'package:deemusiq/services/integrity/integrity_service.dart';
 import 'package:deemusiq/services/kv_store/encrypted_kv_store.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
 import 'package:deemusiq/services/logger/logger.dart';
@@ -94,6 +96,16 @@ Future<void> main(List<String> rawArgs) async {
 
     await KVStoreService.initialize();
 
+    // Anti-tamper boot gate (Android, offline): refuse to run a build signed
+    // with a certificate other than the pinned release certificate. No-op until
+    // a permanent keystore + DEEMUSIQ_CERT_SHA256 are configured (see
+    // README.DEEMUSIQ.md), so unsigned/dev builds still start.
+    if (!await IntegrityService.instance.bootCheckPassed()) {
+      FlutterNativeSplash.remove();
+      runApp(const TamperBlockedApp());
+      return;
+    }
+
     if (kIsDesktop) {
       await windowManager.setPreventClose(true);
       await YtDlp.instance
@@ -134,6 +146,11 @@ Future<void> main(List<String> rawArgs) async {
         child: const DeeMusiq(),
       ),
     );
+
+    // Start the runtime integrity monitor (online APK-hash check now, then at a
+    // random 1–10 minute interval). Locks the wallet on a confirmed mismatch;
+    // playback is never interrupted. No-op off Android.
+    IntegrityService.instance.startMonitor();
   });
 }
 

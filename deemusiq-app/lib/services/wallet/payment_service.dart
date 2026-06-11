@@ -1,6 +1,7 @@
 import 'package:deemusiq/models/wallet/payment_method.dart';
 import 'package:deemusiq/models/wallet/region_pricing.dart';
 import 'package:deemusiq/models/wallet/token_pack.dart';
+import 'package:deemusiq/services/integrity/integrity_service.dart';
 import 'package:deemusiq/services/wallet/wallet_api.dart';
 
 enum PaymentStatus {
@@ -134,6 +135,15 @@ class DeeMusiqPaymentService implements PaymentService {
     required RegionTier region,
     required PaymentMethodKind method,
   }) async {
+    // Refuse to move money from a build flagged as tampered/repackaged.
+    if (IntegrityService.instance.walletLocked) {
+      return PaymentResult(
+        status: PaymentStatus.failed,
+        reference: _reference(),
+        message:
+            "Top-ups are disabled because this app may be modified. Reinstall the official DeeMusiq.",
+      );
+    }
     // DeeMusiq tokens are purchased ONLINE only — the backend is the single
     // source of truth for balances, so there is no local or "demo" crediting.
     if (PaymentGatewayConfig.backendBaseUrl.isEmpty) {

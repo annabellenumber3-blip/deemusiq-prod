@@ -7,6 +7,7 @@ import 'package:deemusiq/models/wallet/supported_creator.dart';
 import 'package:deemusiq/models/wallet/token_pack.dart';
 import 'package:deemusiq/models/wallet/token_transaction.dart';
 import 'package:deemusiq/models/wallet/wallet_state.dart';
+import 'package:deemusiq/services/integrity/integrity_service.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 import 'package:deemusiq/services/wallet/wallet_api.dart';
 import 'package:deemusiq/services/wallet/wallet_persistence.dart';
@@ -26,6 +27,17 @@ class WalletNotifier extends Notifier<WalletState> {
   @override
   WalletState build() {
     return WalletPersistence.load();
+  }
+
+  /// Money features are disabled when the integrity check has flagged a
+  /// tampered/repackaged build. Sets [lastActionError] for the UI.
+  bool _integrityLocked() {
+    if (IntegrityService.instance.walletLocked) {
+      lastActionError =
+          "Wallet disabled — this app may be modified. Reinstall the official DeeMusiq.";
+      return true;
+    }
+    return false;
   }
 
   Future<void> _commit(WalletState next) async {
@@ -81,6 +93,7 @@ class WalletNotifier extends Notifier<WalletState> {
     required int tokens,
   }) async {
     lastActionError = null;
+    if (_integrityLocked()) return false;
     if (tokens <= 0) return false;
     // Offline, the local ledger gates the spend. Online, the server is the
     // ledger — a stale-low local balance must not block a server-valid spend.
@@ -163,6 +176,7 @@ class WalletNotifier extends Notifier<WalletState> {
     required int tokens,
   }) async {
     lastActionError = null;
+    if (_integrityLocked()) return false;
     if (tokens <= 0) return false;
     // Same gating as pushSong: local balance only matters offline.
     if (!WalletApiClient.instance.isConfigured && tokens > state.balance) {
