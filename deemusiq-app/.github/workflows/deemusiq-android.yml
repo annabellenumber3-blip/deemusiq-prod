@@ -3,6 +3,9 @@ name: Build DeeMusiq (Android APK)
 # How to use:
 #  • Manual:  Actions tab → "Build DeeMusiq (Android APK)" → Run workflow
 #  • Release: push a tag like v1.0.0  →  APK is attached to a GitHub Release
+#  • Quality gate: every branch push / PR runs the `check` job only
+#    (analyze + test); the APK `android` job builds on tags & manual runs,
+#    after `check` passes.
 #
 # NOTE — this copy is for when ONLY the deemusiq-app/ folder is uploaded as its own
 # GitHub repo (see README.DEEMUSIQ.md): there is no deemusiq-app/ prefix, so it has
@@ -22,7 +25,9 @@ name: Build DeeMusiq (Android APK)
 on:
   workflow_dispatch:
   push:
+    branches: ["**"] # branch pushes run only `check` (see job-level if on android)
     tags: ["v*"]
+  pull_request:
 
 permissions:
   contents: write
@@ -36,7 +41,53 @@ env:
   FLUTTER_CHANNEL: "master"
 
 jobs:
+  # Quality gate — runs on every branch push, PR, tag push and manual run.
+  check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2.18.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+          git-source: https://github.com/flutter/flutter.git
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create .env (required by envied code generation)
+        # Same as the build job's .env step — see the comments there.
+        # On PRs from forks the secrets are empty; the check still passes.
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+        run: |
+          cat > .env <<EOF
+          LASTFM_API_KEY=${LASTFM_API_KEY}
+          LASTFM_API_SECRET=${LASTFM_API_SECRET}
+          ENABLE_UPDATE_CHECK=1
+          RELEASE_CHANNEL=stable
+          HIDE_DONATIONS=1
+          EOF
+
+      - name: Generate code (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        # --no-fatal-infos: the tree has known info-level lints (e.g.
+        # avoid_print in lib/services/cli/cli.dart). Warnings/errors stay fatal.
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
   android:
+    needs: check
+    # Build only for releases: v* tag pushes and manual runs. `check` runs
+    # (and gates) on those same events; branch pushes / PRs skip this job.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -82,7 +133,7 @@ jobs:
           LASTFM_API_SECRET=${LASTFM_API_SECRET}
           ENABLE_UPDATE_CHECK=1
           RELEASE_CHANNEL=stable
-          HIDE_DONATIONS=0
+          HIDE_DONATIONS=1
           EOF
 
       - name: Generate code (build_runner)
@@ -115,7 +166,16 @@ jobs:
           EOF
 
       - name: Build release APK
-        run: flutter build apk --release --flavor stable
+        # Backend wiring is optional: when the repo var/secret are unset the
+        # dart-defines are empty strings and the app keeps its offline default.
+        # Passed via env: (not interpolated into the script body).
+        env:
+          DEEMUSIQ_BACKEND_URL: ${{ vars.DEEMUSIQ_BACKEND_URL }}
+          DEEMUSIQ_CHANNEL_KEY: ${{ secrets.DEEMUSIQ_CHANNEL_KEY }}
+        run: >
+          flutter build apk --release --flavor stable
+          --dart-define=DEEMUSIQ_BACKEND_URL="${DEEMUSIQ_BACKEND_URL}"
+          --dart-define=DEEMUSIQ_CHANNEL_KEY="${DEEMUSIQ_CHANNEL_KEY}"
 
       - name: Collect APK
         run: |
