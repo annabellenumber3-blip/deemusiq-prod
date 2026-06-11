@@ -244,7 +244,7 @@ abstract class ServiceUtils {
     if (Env.releaseChannel == ReleaseChannel.nightly) {
       final value = await globalDio.getUri(
         Uri.parse(
-          "https://api.github.com/repos/s-b-repo/deemusiq/actions/workflows/deemusiq-android.yml/runs?status=success&per_page=1",
+          "https://api.github.com/repos/deemusiq/deemusiq/actions/workflows/deemusiq-android.yml/runs?status=success&per_page=1",
         ),
         options: Options(
           responseType: ResponseType.json,
@@ -268,7 +268,7 @@ abstract class ServiceUtils {
     } else {
       final value = await globalDio.getUri(
         Uri.parse(
-          "https://api.github.com/repos/s-b-repo/deemusiq/releases/latest",
+          "https://api.github.com/repos/deemusiq/deemusiq/releases/latest",
         ),
       );
       // Strip only a leading "v" (e.g. v1.0.0); replaceAll would corrupt

@@ -56,7 +56,7 @@ class GettingStartedScreenSupportSection extends HookConsumerWidget {
                       }),
                       onPressed: () async {
                         await launchUrlString(
-                          "https://github.com/s-b-repo/deemusiq",
+                          "https://github.com/deemusiq/deemusiq",
                           mode: LaunchMode.externalApplication,
                         );
                       },

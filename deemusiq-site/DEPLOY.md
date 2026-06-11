@@ -79,7 +79,7 @@ Commit and push it so the custom domain persists across future deployments.
 ### D. Swap the baked-in Pages URL
 
 The site currently hard-codes the GitHub Pages base URL
-`https://s-b-repo.github.io/deemusiq/` in several places. When you move to a
+`https://deemusiq.github.io/deemusiq/` in several places. When you move to a
 custom domain, search-and-replace that base URL with your domain in:
 
 | File | Where |
@@ -90,7 +90,7 @@ custom domain, search-and-replace that base URL with your domain in:
 | `robots.txt` | the first `Sitemap:` line |
 
 ```bash
-grep -rln "s-b-repo.github.io/deemusiq" . | xargs sed -i 's|https://s-b-repo.github.io/deemusiq|https://www.deemusiq.co.za|g'
+grep -rln "deemusiq.github.io/deemusiq" . | xargs sed -i 's|https://deemusiq.github.io/deemusiq|https://www.deemusiq.co.za|g'
 ```
 
 ---
@@ -99,7 +99,7 @@ grep -rln "s-b-repo.github.io/deemusiq" . | xargs sed -i 's|https://s-b-repo.git
 
 - [ ] **Absolute URLs** — `canonical`, `og:url`, `og:image` and `twitter:image` in
   `index.html` are already absolute, pointing at
-  `https://s-b-repo.github.io/deemusiq/`. If you deploy anywhere else (custom
+  `https://deemusiq.github.io/deemusiq/`. If you deploy anywhere else (custom
   domain or a different user/repo), update them — see "Swap the baked-in Pages
   URL" above. Relative OG URLs are silently ignored by social crawlers
   (Facebook, WhatsApp, Telegram).
@@ -123,7 +123,7 @@ Android CI workflow attaches on `v*` tag pushes):
 
 ```javascript
 var DOWNLOADS = {
-  android: "https://github.com/s-b-repo/deemusiq/releases/latest/download/DeeMusiq.apk",
+  android: "https://github.com/deemusiq/deemusiq/releases/latest/download/DeeMusiq.apk",
   windows: "",  // fill in when the Windows build is ready
   linux:   "",  // fill in when the Linux build is ready
   macos:   ""   // fill in when the macOS build is ready

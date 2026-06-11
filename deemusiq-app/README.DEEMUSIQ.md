@@ -29,7 +29,7 @@ choose a tag `v1.0.0` → Publish). The workflow runs automatically and attaches
 `DeeMusiq.apk` to that Release. The public download link is then:
 
 ```
-https://github.com/s-b-repo/deemusiq/releases/latest/download/DeeMusiq.apk
+https://github.com/deemusiq/deemusiq/releases/latest/download/DeeMusiq.apk
 ```
 
 The website (`deemusiq-site/js/main.js` → `DOWNLOADS.android`) already points at

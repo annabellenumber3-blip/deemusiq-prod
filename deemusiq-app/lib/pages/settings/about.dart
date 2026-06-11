@@ -115,8 +115,8 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                               colon,
                               const TableCell(
                                 child: Hyperlink(
-                                  "github.com/s-b-repo/deemusiq",
-                                  "https://github.com/s-b-repo/deemusiq",
+                                  "github.com/deemusiq/deemusiq",
+                                  "https://github.com/deemusiq/deemusiq",
                                 ),
                               ),
                             ],
@@ -128,7 +128,7 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                               const TableCell(
                                 child: Hyperlink(
                                   "BSD-4-Clause",
-                                  "https://raw.githubusercontent.com/s-b-repo/deemusiq/main/deemusiq-app/LICENSE",
+                                  "https://raw.githubusercontent.com/deemusiq/deemusiq/main/deemusiq-app/LICENSE",
                                 ),
                               ),
                             ],
@@ -140,7 +140,7 @@ class AboutDeeMusiqPage extends HookConsumerWidget {
                               const TableCell(
                                 child: Hyperlink(
                                   "GitHub Issues",
-                                  "https://github.com/s-b-repo/deemusiq/issues",
+                                  "https://github.com/deemusiq/deemusiq/issues",
                                 ),
                               ),
                             ],

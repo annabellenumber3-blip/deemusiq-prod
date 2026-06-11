@@ -47,7 +47,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 #### Fixed
 - **Update checker pointed at upstream Spotube** (`service_utils.dart`,
-  `update_dialog.dart`): now checks `s-b-repo/deemusiq` releases; tag parsing
+  `update_dialog.dart`): now checks `deemusiq/deemusiq` releases; tag parsing
   strips only a leading `v`; app version reset to `1.0.0+46` so release tags
   and update prompts line up.
 - **Bundled logo was still Spotube art**: `pubspec.yaml` now ships the

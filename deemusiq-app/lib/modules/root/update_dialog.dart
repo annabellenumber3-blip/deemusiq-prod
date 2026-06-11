@@ -14,9 +14,9 @@ class RootAppUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const url = "https://github.com/s-b-repo/deemusiq/releases/latest";
+    const url = "https://github.com/deemusiq/deemusiq/releases/latest";
     const nightlyUrl =
-        "https://github.com/s-b-repo/deemusiq/actions/workflows/deemusiq-android.yml";
+        "https://github.com/deemusiq/deemusiq/actions/workflows/deemusiq-android.yml";
     return AlertDialog(
       title: Text(context.l10n.spotube_has_an_update),
       actions: [

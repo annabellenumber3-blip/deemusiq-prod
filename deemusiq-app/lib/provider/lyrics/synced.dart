@@ -37,7 +37,7 @@ class SyncedLyricsNotifier
       options: Options(
         headers: {
           "User-Agent":
-              "DeeMusiq v${packageInfo.version} (https://github.com/s-b-repo/deemusiq)"
+              "DeeMusiq v${packageInfo.version} (https://github.com/deemusiq/deemusiq)"
         },
         responseType: ResponseType.json,
       ),

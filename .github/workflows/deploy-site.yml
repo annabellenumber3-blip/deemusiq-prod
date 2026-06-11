@@ -1,0 +1,46 @@
+name: Deploy website (GitHub Pages)
+
+# Publishes deemusiq-site/ to https://deemusiq.github.io/deemusiq/
+# Runs only on the public brand repo — the private dev copy (s-b-repo)
+# can't serve Pages on a free plan, so the job is skipped there.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "deemusiq-site/**"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.repository == 'deemusiq/deemusiq'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages (auto-enables on first run)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deemusiq-site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
