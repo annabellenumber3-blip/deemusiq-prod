@@ -1,62 +1,91 @@
-**Privacy Policy**
+# DeeMusiq Privacy Policy
 
-Kingkor Roy Tirtho built the Spotube app as an Open Source app. This SERVICE is provided by Kingkor Roy Tirtho at no cost and is intended for use as is.
+**Effective date: 11 June 2026**
 
-This page is used to inform visitors regarding my policies with the collection, use, and disclosure of Personal Information if anyone decided to use my Service.
+DeeMusiq (operated from KwaZulu-Natal, South Africa) is built to work **offline
+by default**. You can stream, download and play music without creating an
+account, and in that mode your data stays on your device. This policy explains
+what happens on your device, what we collect if you choose to use the optional
+online features, and the rights you have over your information.
 
-If you choose to use my Service, then you agree to the collection and use of information in relation to this policy. The Personal Information that I collect is used for providing and improving the Service. I will not use or share your information with anyone except as described in this Privacy Policy.
+## 1. What stays on your device
 
-The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which are accessible at Spotube unless otherwise defined in this Privacy Policy.
+When you use the app without an account, the following is stored locally on
+your device only and is not sent to us:
 
-**Information Collection and Use**
+- Your music library, playlists, downloads and playback history.
+- App settings and preferences.
+- Diagnostic logs the app writes locally.
 
-For a better experience, while using our Service, I may require you to provide us with certain personally identifiable information. The information that I request will be retained on your device and is not collected by me in any way.
+We have no access to this data. Uninstalling the app removes it. Note that
+even without an account, the app connects to third-party services to function:
+it fetches music from streaming sources, checks GitHub for app updates, and —
+only if you enable scrobbling — sends playback history to Last.fm. Those
+services receive standard connection data (such as your IP address) under
+their own privacy policies; none of it is sent to us.
 
-The app does use third-party services that may collect information used to identify you.
+## 2. Optional online features
 
-Link to the privacy policy of third-party service providers used by the app
+Some features — the token wallet, purchases and linked accounts — talk to a
+DeeMusiq backend service. These features are **opt-in**: nothing is sent until
+you create an account or start a purchase. If you opt in, the backend stores:
 
-*   [Google Play Services](https://www.google.com/policies/privacy/)
+- **A device-bound account** — an identifier tied to your device that lets the
+  app sign in without a username.
+- **An optional email address** — only if you choose to add one, used to
+  verify and recover your account.
+- **Your token wallet ledger** — a record of tokens purchased, credited and
+  spent, kept so your balance is correct and disputes can be resolved.
+- **Linked-account tokens** — if you connect a third-party music account, the
+  OAuth tokens for it are stored **encrypted at rest**. Account passwords are
+  never stored in plain text.
 
-**Log Data**
+## 3. Payments
 
-Log Data may include information such as your device Internet Protocol (“IP”) address, device name, operating system version, the configuration of the app when utilizing my Service, the time and date of your use of the Service, and other statistics. But none of this info leaves your device. It's stored in a log-file on your device only accessible to you.
+Payments are processed by independent third-party providers: **PayFast**,
+**Stripe** and **NOWPayments** (for cryptocurrency payments). Your card number
+and full payment credentials go directly to the provider — **DeeMusiq never
+sees or stores card numbers**. We keep a record of each transaction (amount,
+status, payment method, the provider's payment reference and the tokens
+credited). Each provider processes your data under its own privacy policy.
 
-**Cookies**
+## 4. What we don't do
 
-Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers. These are sent to your browser from the websites that you visit and are stored on your device's internal memory.
+- We do **not sell** your personal information.
+- We do not build advertising profiles or share your data with ad networks.
+- We do not collect data from the offline parts of the app.
 
-This Service does not use these “cookies” explicitly. How ever the some services may use cookies for their cause (e.g. improvement) but you can deny them once asked
+## 5. Your rights (POPIA)
 
-**Service Providers**
+We process personal information in line with South Africa's Protection of
+Personal Information Act (POPIA). You have the right to:
 
-I may employ third-party companies and individuals due to the following reasons:
+- **Access** the personal information we hold about you.
+- **Correct** information that is inaccurate or out of date.
+- **Delete** your account and data — the app has a built-in **account
+  deletion** option that permanently removes your account, wallet ledger and
+  linked-account data from the backend.
+- Lodge a complaint with the South African Information Regulator if you
+  believe your information has been mishandled.
 
-*   To facilitate our Service;
-*   To provide the Service on our behalf;
-*   To perform Service-related services; or
-*   To assist us in analyzing how our Service is used.
+## 6. Retention and security
 
-I want to inform users of this Service that these third parties have access to their Personal Information. The reason is to perform the tasks assigned to them on our behalf. However, they are obligated not to disclose or use the information for any other purpose.
+Account data is kept only while your account exists and is deleted when you
+delete your account. We protect data in transit with TLS and protect stored
+secrets with encryption, but no method of transmission or storage is
+completely secure, and we cannot guarantee absolute security.
 
-**Security**
+## 7. Children
 
-I value your trust in providing us your Personal Information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and I cannot guarantee its absolute security.
+DeeMusiq is not directed at children under 13, and we do not knowingly collect
+personal information from them. If you believe a child has provided us with
+personal information, contact us and we will delete it.
 
-**Links to Other Sites**
+## 8. Changes to this policy
 
-This Service may contain links to other sites. If you click on a third-party link, you will be directed to that site. Note that these external sites are not operated by me. Therefore, I strongly advise you to review the Privacy Policy of these websites. I have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
+If this policy changes, the updated version will be posted on this page with a
+new effective date.
 
-**Children’s Privacy**
+## 9. Contact
 
-These Services do not address anyone under the age of 13. I do not knowingly collect personally identifiable information from children under 13 years of age. In the case I discover that a child under 13 has provided me with personal information, I immediately delete this from our servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact me so that I will be able to do the necessary actions.
-
-**Changes to This Privacy Policy**
-
-I may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. I will notify you of any changes by posting the new Privacy Policy on this page.
-
-This policy is effective as of 2022-04-01
-
-**Contact Us**
-
-If you have any questions or suggestions about my Privacy Policy, do not hesitate to contact me at krtirtho@gmail.com.
+Questions or requests about your data: [deemusiq@protonmail.com](mailto:deemusiq@protonmail.com)

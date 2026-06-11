@@ -11,7 +11,7 @@
      request early access.
      ---------------------------------------------------------- */
   var DOWNLOADS = {
-    android: "", // e.g. "https://github.com/<you>/deemusiq/releases/latest/download/DeeMusiq.apk"
+    android: "https://github.com/s-b-repo/deemusiq/releases/latest/download/DeeMusiq.apk",
     windows: "", // e.g. ".../DeeMusiq-setup.exe"
     linux:   "", // e.g. ".../DeeMusiq.AppImage"
     macos:   ""  // e.g. ".../DeeMusiq.dmg"

@@ -5,6 +5,65 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-06-11 — Production-readiness pass (v1.0.0 release prep)
+
+#### Added
+- **Backend test suite + CI** (private repo `s-b-repo/deemusiq-backend`):
+  21 vitest+supertest tests — Ed25519 device-auth round-trip, email
+  register/verify/login/reset, wallet ledger math, webhook `fulfilIntent`
+  idempotency (sequential + concurrent), region pricing & `PAYMENTS_ZA_ONLY`
+  gating; GitHub Actions workflow (Node 20: build + test on push/PR). The
+  Express app is now importable (`export { app }`, port binds only as
+  entrypoint); rate limits env-configurable; Prisma `onDelete: Cascade` on
+  the four User-child relations.
+- **Real OAuth account linking in the app** (`lib/pages/wallet/linked_accounts.dart`):
+  the fake "type your handle" dialog is gone — Connect now calls the backend's
+  `/link/<provider>/start`, opens the authorize URL in the browser, and the
+  existing `deemusiq://` deep-link handler re-syncs the authoritative list.
+  Disconnect calls `DELETE /link/accounts/<provider>` when online.
+- **Global leaderboard + server pricing** (`leaderboard_provider.dart`,
+  `server_pricing_provider.dart`): the leaderboard shows the global
+  most-pushed board when a backend is configured (local pushes offline);
+  the token store prefers server-authoritative packs with silent local fallback.
+- **Online push/support routing** (`wallet_provider.dart`): pushes and creator
+  support hit the backend ledger when configured (server is source of truth,
+  no local debit on API failure — no double-spend), local ledger offline.
+- **Flutter wallet tests** (`test/wallet/`): region pricing math, payment
+  routing, wallet provider ledger behavior, linked-account JSON — replaces the
+  stock counter `widget_test.dart` (which always failed).
+- **CI quality gate** (both `deemusiq-android.yml` copies): new `check` job
+  (pub get → codegen → `flutter analyze` → `flutter test`) runs on every
+  branch push/PR; the APK build needs it and stays tag/dispatch-only.
+  Owner-configurable `--dart-define` passthrough for `DEEMUSIQ_BACKEND_URL`
+  (repo variable) and `DEEMUSIQ_CHANNEL_KEY` (secret).
+- **Website legal pages**: `privacy.html` + `terms.html` (POPIA rights,
+  payment processors, truthful third-party disclosures); app
+  `PRIVACY_POLICY.md` rewritten to match (the old one was upstream Spotube's
+  and no longer true); footer links added; sitemap/canonical/OG URLs fixed to
+  the real Pages origin.
+- **Go-Live checklist** in `README.DEEMUSIQ.md`: every owner-config item
+  (backend URL/channel key, payment + SMTP + Spotify creds, signing keystore,
+  socials) with where and how to set it.
+
+#### Fixed
+- **Update checker pointed at upstream Spotube** (`service_utils.dart`,
+  `update_dialog.dart`): now checks `s-b-repo/deemusiq` releases; tag parsing
+  strips only a leading `v`; app version reset to `1.0.0+46` so release tags
+  and update prompts line up.
+- **Bundled logo was still Spotube art**: `pubspec.yaml` now ships the
+  DeeMusiq logo (+ generated `.ico`); About/Getting-Started/tray use it.
+- **`/wallet/push` 400 on songs without artwork**: the app sent JSON `null`s
+  for optional fields, which the backend's zod schema rejects — absent fields
+  are now omitted.
+- **Sealed error responses were unreadable** when the secure channel is
+  enabled: the Dio error path now unseals envelopes so users see the server's
+  actual error reason.
+- Misc: stale-low local balance no longer blocks server-valid spends online;
+  browser-launch failures during linking are surfaced honestly; creator
+  support shows the real failure reason; About page says
+  "Made with ❤️ in South Africa 🇿🇦"; donations UI hidden via `HIDE_DONATIONS=1`;
+  backend `num()` env helper treats empty strings as unset.
+
 ### 2026-06-09 — Backend bug fixes (error handling: provider outages & missing rows no longer 500)
 
 #### Fixed

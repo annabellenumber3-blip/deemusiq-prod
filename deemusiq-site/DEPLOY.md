@@ -76,20 +76,33 @@ www.deemusiq.co.za
 
 Commit and push it so the custom domain persists across future deployments.
 
+### D. Swap the baked-in Pages URL
+
+The site currently hard-codes the GitHub Pages base URL
+`https://s-b-repo.github.io/deemusiq/` in several places. When you move to a
+custom domain, search-and-replace that base URL with your domain in:
+
+| File | Where |
+|------|-------|
+| `index.html` | `<link rel="canonical">`, `og:url`, `og:image`, `twitter:image` |
+| `privacy.html` / `terms.html` | `<link rel="canonical">` |
+| `sitemap.xml` | every `<loc>` entry |
+| `robots.txt` | the first `Sitemap:` line |
+
+```bash
+grep -rln "s-b-repo.github.io/deemusiq" . | xargs sed -i 's|https://s-b-repo.github.io/deemusiq|https://www.deemusiq.co.za|g'
+```
+
 ---
 
 ## Post-deploy checklist
 
-- [ ] **`og:image` URL** — Open `index.html` and change the `og:image` value from the relative path to a full absolute URL:
-  ```html
-  <meta property="og:image" content="https://www.deemusiq.co.za/assets/img/apple-touch-icon.png" />
-  ```
-  Relative URLs are silently ignored by social crawlers (Facebook, WhatsApp, Telegram).
-
-- [ ] **`og:url` meta** — Add below the existing OG tags:
-  ```html
-  <meta property="og:url" content="https://www.deemusiq.co.za" />
-  ```
+- [ ] **Absolute URLs** — `canonical`, `og:url`, `og:image` and `twitter:image` in
+  `index.html` are already absolute, pointing at
+  `https://s-b-repo.github.io/deemusiq/`. If you deploy anywhere else (custom
+  domain or a different user/repo), update them — see "Swap the baked-in Pages
+  URL" above. Relative OG URLs are silently ignored by social crawlers
+  (Facebook, WhatsApp, Telegram).
 
 - [ ] **Social links** — In `index.html`, find the `contact__socials` block and replace the `href="#"` placeholders with real profile URLs (Facebook, Instagram, TikTok, X).
 
@@ -104,18 +117,22 @@ Commit and push it so the custom domain persists across future deployments.
 
 ## Wiring up the APK download link
 
-Once a CI build publishes a GitHub Release (push a tag like `v1.0.0`), the Android download button goes live by editing one constant in `js/main.js`:
+The Android button is already wired in `js/main.js` to the latest GitHub
+Release of the main repo (the asset name `DeeMusiq.apk` matches what the
+Android CI workflow attaches on `v*` tag pushes):
 
 ```javascript
 var DOWNLOADS = {
-  android: "https://github.com/YOUR_USERNAME/YOUR_REPO/releases/latest/download/DeeMusiq.apk",
+  android: "https://github.com/s-b-repo/deemusiq/releases/latest/download/DeeMusiq.apk",
   windows: "",  // fill in when the Windows build is ready
   linux:   "",  // fill in when the Linux build is ready
   macos:   ""   // fill in when the macOS build is ready
 };
 ```
 
-Commit and push — no other changes needed.
+Until the first release exists, that URL 404s — push a tag like `v1.0.0` to
+publish one. Desktop platforms still fall back to the contact form while their
+values are empty. If the app moves to a different repo, update the URL here.
 
 ---
 

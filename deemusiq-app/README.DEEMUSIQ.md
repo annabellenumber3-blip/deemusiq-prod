@@ -29,10 +29,11 @@ choose a tag `v1.0.0` → Publish). The workflow runs automatically and attaches
 `DeeMusiq.apk` to that Release. The public download link is then:
 
 ```
-https://github.com/<your-username>/deemusiq-app/releases/latest/download/DeeMusiq.apk
+https://github.com/s-b-repo/deemusiq/releases/latest/download/DeeMusiq.apk
 ```
 
-Paste that link into the **website** (`deemusiq-site/js/main.js` → `DOWNLOADS.android`).
+The website (`deemusiq-site/js/main.js` → `DOWNLOADS.android`) already points at
+this link — it goes live the moment the first `v*` release is published.
 
 ---
 
@@ -63,6 +64,54 @@ install over older versions. One-time setup:
 to already-installed users.
 
 ---
+
+## 🚀 Go-Live checklist (everything the owner must configure)
+
+Nothing below is hardcoded — the app and backend run in safe offline/sandbox
+modes until you set these. Cross-references: [`DEEMUSIQ_WALLET.md`](./DEEMUSIQ_WALLET.md)
+and the backend's own README (private repo
+[`s-b-repo/deemusiq-backend`](https://github.com/s-b-repo/deemusiq-backend),
+which has a "Secrets you MUST change" section).
+
+| What | Where | How |
+|------|-------|-----|
+| **Backend deployment** | Render / Docker (see backend README) | Deploy first; everything below hangs off it. |
+| **Backend URL in the app** | GitHub repo → Settings → Secrets and variables → Actions → **Variables** → `DEEMUSIQ_BACKEND_URL` | e.g. `https://api.deemusiq.co.za`. Empty = app stays offline-only (still works). |
+| **Secure channel key** | Repo **secret** `DEEMUSIQ_CHANNEL_KEY` + backend `.env` `SECURE_CHANNEL_KEY` | Must be identical on both sides: `openssl rand -base64 32`. |
+| **Card payments** | Backend `.env`: `PAYFAST_*` / `STRIPE_*` + provider dashboards' webhook URLs → `https://<backend>/webhooks/payfast` / `/webhooks/stripe` | Until set, checkout returns "unavailable" safely. Set `PAYFAST_SANDBOX=false` only when going live. |
+| **Crypto payments** | Backend `.env`: `NOWPAYMENTS_*`, `CRYPTO_ADDR_*` | Deposit addresses live **only** on the backend — never in the app. |
+| **Verification emails** | Backend `.env`: `SMTP_HOST/PORT/USER/PASS/FROM` | Logs-only until set (registration still works). |
+| **Spotify account linking** | Backend `.env`: `SPOTIFY_CLIENT_ID/SECRET`, redirect URI `https://<backend>/link/spotify/callback` (register it in the Spotify dev dashboard) | Other providers show "coming soon" until adapters exist. |
+| **Permanent signing keystore** | Repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` | See "Signing" above — **do this before the first public release.** |
+| **Site download link** | `deemusiq-site/js/main.js` | Android already wired; goes live with the first `v*` release. |
+| **Site social links** | `deemusiq-site/index.html` footer | Currently `#` placeholders — fill in when the accounts exist. |
+| **Release process** | — | Bump `pubspec.yaml` `x.y.z+N` → push tag `vx.y.z` → CI checks, builds, signs, attaches `DeeMusiq.apk` to the Release. |
+
+## 📌 Release rule (version numbering)
+
+The `version:` in [`pubspec.yaml`](./pubspec.yaml) is `x.y.z+buildNumber`. When you cut a
+release:
+
+- the **`x.y.z` part must equal the next git tag `vx.y.z`** (e.g. `version: 1.0.0+46`
+  → tag `v1.0.0`). The in-app update checker compares the running version against the
+  latest release tag, so a mismatch makes update prompts wrong.
+- the **build number (`+N`) always increments**, on every release *and* every nightly,
+  even if `x.y.z` didn't change — Android refuses to install an APK whose build number
+  isn't higher than the installed one, and the nightly update checker compares build
+  numbers against the Actions run number.
+
+## Accepted internal naming (deliberately NOT renamed)
+
+These still say "spotube" on purpose — they are invisible to users, and renaming them
+breaks builds or ecosystem compatibility for zero benefit:
+
+| What | Why it stays |
+|------|--------------|
+| **l10n keys** (e.g. `about_spotube`, `u_love_spotube`) | The *values* already say DeeMusiq; renaming the keys ripples through 30+ `.arb` files plus generated localization code. |
+| **Kotlin package** `oss.krtirtho.spotube` | Only a source-folder namespace; the user-visible `applicationId` is already `za.co.deemusiq.app`. Moving Kotlin packages risks breaking the Android build. |
+| **Plugin-ecosystem identifiers** (`spotube-metadata-plugin` topics, `hetu_spotube_plugin`, `.smplug` plugin assets) | DeeMusiq consumes the existing Spotube plugin ecosystem; renaming the identifiers would find zero plugins. |
+| **`_spotube._tcp` bonsoir service type** | mDNS discovery for the remote-control/connect feature; both ends must advertise the same service type to find each other. |
+| **Internal Dart identifiers** (`package:hetu_spotube_plugin/...` imports, `spotube_plugin.*` storage keys) and the **flatpak id** `com.github.KRTirtho.Spotube` | Pure code-level names coming from upstream dependency packages (the app's own package is already `deemusiq`), plus the Linux flatpak icon id — no user ever sees them. |
 
 ## What was rebranded
 See [`NOTICE.md`](./NOTICE.md) for the full list. In short: every place a user sees
