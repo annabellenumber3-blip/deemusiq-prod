@@ -44,7 +44,6 @@ import 'package:deemusiq/pages/settings/about.dart' as _i1;
 import 'package:deemusiq/pages/settings/blacklist.dart' as _i5;
 import 'package:deemusiq/pages/settings/logs.dart' as _i18;
 import 'package:deemusiq/pages/settings/metadata/metadata_form.dart' as _i29;
-import 'package:deemusiq/pages/settings/metadata_plugins.dart' as _i30;
 import 'package:deemusiq/pages/settings/scrobbling/scrobbling.dart' as _i32;
 import 'package:deemusiq/pages/settings/settings.dart' as _i31;
 import 'package:deemusiq/pages/stats/albums/albums.dart' as _i33;
@@ -763,22 +762,6 @@ class SettingsMetadataProviderFormRouteArgs {
   String toString() {
     return 'SettingsMetadataProviderFormRouteArgs{key: $key, title: $title, fields: $fields}';
   }
-}
-
-/// generated route for
-/// [_i30.SettingsMetadataProviderPage]
-class SettingsMetadataProviderRoute extends _i48.PageRouteInfo<void> {
-  const SettingsMetadataProviderRoute({List<_i48.PageRouteInfo>? children})
-    : super(SettingsMetadataProviderRoute.name, initialChildren: children);
-
-  static const String name = 'SettingsMetadataProviderRoute';
-
-  static _i48.PageInfo page = _i48.PageInfo(
-    name,
-    builder: (data) {
-      return const _i30.SettingsMetadataProviderPage();
-    },
-  );
 }
 
 /// generated route for

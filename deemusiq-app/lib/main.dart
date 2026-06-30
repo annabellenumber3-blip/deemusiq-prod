@@ -33,7 +33,6 @@ import 'package:deemusiq/provider/audio_player/audio_player_streams.dart';
 import 'package:deemusiq/provider/database/database.dart';
 import 'package:deemusiq/provider/glance/glance.dart';
 import 'package:deemusiq/provider/metadata_plugin/metadata_plugin_provider.dart';
-import 'package:deemusiq/provider/metadata_plugin/updater/update_checker.dart';
 import 'package:deemusiq/provider/server/bonsoir.dart';
 import 'package:deemusiq/provider/server/server.dart';
 import 'package:deemusiq/provider/tray_manager/tray_manager.dart';
@@ -180,8 +179,6 @@ class DeeMusiq extends HookConsumerWidget {
     ref.listen(metadataPluginsProvider, (_, __) {});
     ref.listen(metadataPluginProvider, (_, __) {});
     ref.listen(audioSourcePluginProvider, (_, __) {});
-    ref.listen(metadataPluginUpdateCheckerProvider, (_, __) {});
-    ref.listen(audioSourcePluginUpdateCheckerProvider, (_, __) {});
 
     useFixWindowStretching();
     useDisableBatteryOptimizations();
