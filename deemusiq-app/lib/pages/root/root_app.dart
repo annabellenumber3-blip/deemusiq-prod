@@ -5,9 +5,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shadcn_flutter/shadcn_flutter_extension.dart';
 import 'package:deemusiq/hooks/configurators/use_check_yt_dlp_installed.dart';
+import 'package:deemusiq/modules/root/deemusiq_navigation_bar.dart';
 import 'package:deemusiq/modules/root/bottom_player.dart';
 import 'package:deemusiq/modules/root/sidebar/sidebar.dart';
-import 'package:deemusiq/modules/root/deemusiq_navigation_bar.dart';
 import 'package:deemusiq/hooks/configurators/use_endless_playback.dart';
 import 'package:deemusiq/modules/root/use_global_subscriptions.dart';
 import 'package:deemusiq/provider/glance/glance.dart';
@@ -51,13 +51,20 @@ class RootAppPage extends HookConsumerWidget {
           ],
           floatingFooter: true,
           child: Sidebar(
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                padding: MediaQuery.paddingOf(context)
-                    .copyWith(bottom: 100 * context.theme.scaling),
-              ),
-              child: const AutoRouter(),
-            ),
+            child: Builder(builder: (context) {
+              // Dynamically account for bottom player (63px collapsed) +
+              // navigation bar (50px animated) so content never hides behind them.
+              final navHeight = ref.watch(navigationPanelHeight);
+              final playerHeight = 63.0; // PlayerOverlay collapsed minHeight
+              final bottomPadding = (playerHeight + navHeight) * context.theme.scaling;
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  padding: MediaQuery.paddingOf(context)
+                      .copyWith(bottom: bottomPadding),
+                ),
+                child: const AutoRouter(),
+              );
+            }),
           ),
         ),
       ),
