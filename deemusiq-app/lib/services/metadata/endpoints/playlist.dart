@@ -1,22 +1,10 @@
-import 'package:hetu_script/hetu_script.dart';
-import 'package:hetu_script/values.dart';
 import 'package:deemusiq/models/metadata/metadata.dart';
 
 class MetadataPluginPlaylistEndpoint {
-  final Hetu hetu;
-  MetadataPluginPlaylistEndpoint(this.hetu);
-
-  HTInstance get hetuMetadataPlaylist =>
-      (hetu.fetch("metadataPlugin") as HTInstance).memberGet("playlist")
-          as HTInstance;
+  MetadataPluginPlaylistEndpoint();
 
   Future<DeeMusiqFullPlaylistObject> getPlaylist(String id) async {
-    final raw = await hetuMetadataPlaylist
-        .invoke("getPlaylist", positionalArgs: [id]) as Map;
-
-    return DeeMusiqFullPlaylistObject.fromJson(
-      raw.cast<String, dynamic>(),
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<DeeMusiqPaginationResponseObject<DeeMusiqFullTrackObject>> tracks(
@@ -24,20 +12,7 @@ class MetadataPluginPlaylistEndpoint {
     int? offset,
     int? limit,
   }) async {
-    final raw = await hetuMetadataPlaylist.invoke(
-      "tracks",
-      positionalArgs: [id],
-      namedArgs: {
-        "offset": offset,
-        "limit": limit,
-      }..removeWhere((key, value) => value == null),
-    ) as Map;
-
-    return DeeMusiqPaginationResponseObject<DeeMusiqFullTrackObject>.fromJson(
-      raw.cast<String, dynamic>(),
-      (Map json) =>
-          DeeMusiqFullTrackObject.fromJson(json.cast<String, dynamic>()),
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<DeeMusiqFullPlaylistObject?> create(
@@ -47,22 +22,7 @@ class MetadataPluginPlaylistEndpoint {
     bool? public,
     bool? collaborative,
   }) async {
-    final raw = await hetuMetadataPlaylist.invoke(
-      "create",
-      positionalArgs: [userId],
-      namedArgs: {
-        "name": name,
-        "description": description,
-        "public": public,
-        "collaborative": collaborative,
-      }..removeWhere((key, value) => value == null),
-    ) as Map?;
-
-    if (raw == null) return null;
-
-    return DeeMusiqFullPlaylistObject.fromJson(
-      raw.cast<String, dynamic>(),
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> update(
@@ -72,16 +32,7 @@ class MetadataPluginPlaylistEndpoint {
     bool? public,
     bool? collaborative,
   }) async {
-    await hetuMetadataPlaylist.invoke(
-      "update",
-      positionalArgs: [playlistId],
-      namedArgs: {
-        "name": name,
-        "description": description,
-        "public": public,
-        "collaborative": collaborative,
-      }..removeWhere((key, value) => value == null),
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> addTracks(
@@ -89,47 +40,25 @@ class MetadataPluginPlaylistEndpoint {
     required List<String> trackIds,
     int? position,
   }) async {
-    await hetuMetadataPlaylist.invoke(
-      "addTracks",
-      positionalArgs: [playlistId],
-      namedArgs: {
-        "trackIds": trackIds,
-        "position": position,
-      }..removeWhere((key, value) => value == null),
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> removeTracks(
     String playlistId, {
     required List<String> trackIds,
   }) async {
-    await hetuMetadataPlaylist.invoke(
-      "removeTracks",
-      positionalArgs: [playlistId],
-      namedArgs: {
-        "trackIds": trackIds,
-      }..removeWhere((key, value) => value == null),
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> save(String playlistId) async {
-    await hetuMetadataPlaylist.invoke(
-      "save",
-      positionalArgs: [playlistId],
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> unsave(String playlistId) async {
-    await hetuMetadataPlaylist.invoke(
-      "unsave",
-      positionalArgs: [playlistId],
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> deletePlaylist(String playlistId) async {
-    return await hetuMetadataPlaylist.invoke(
-      "deletePlaylist",
-      positionalArgs: [playlistId],
-    );
+    throw UnimplementedError('Native plugin must override');
   }
 }

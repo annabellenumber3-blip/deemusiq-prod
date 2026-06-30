@@ -126,19 +126,6 @@ dependencies:
   http_parser: ^4.1.2
   collection: any
   archive: ^4.0.7
-  hetu_script: ^0.4.2+1
-  hetu_std:
-    git:
-      url: https://github.com/hetu-community/hetu_std.git
-      ref: main
-  hetu_otp_util:
-    git:
-      url: https://github.com/hetu-community/hetu_otp_util.git
-      ref: main
-  hetu_spotube_plugin:
-    git:
-      url: https://github.com/KRTirtho/hetu_spotube_plugin.git
-      ref: main
   get_it: ^8.0.3
   flutter_markdown_plus: ^1.0.3
   pub_semver: ^2.2.0
@@ -220,8 +207,6 @@ flutter:
     - assets/images/logos/
     - assets/branding/deemusiq-logo.png
     - assets/branding/deemusiq-logo.ico
-    - assets/plugins/spotube-plugin-musicbrainz-listenbrainz/plugin.smplug
-    - assets/plugins/spotube-plugin-youtube-audio/plugin.smplug
     - LICENSE
     - packages/flutter_undraw/assets/undraw/access_denied.svg
     - packages/flutter_undraw/assets/undraw/fixing_bugs.svg
@@ -235,10 +220,6 @@ flutter:
     - packages/flutter_undraw/assets/undraw/no_data.svg
     - packages/flutter_undraw/assets/undraw/process.svg
     - packages/flutter_undraw/assets/undraw/stars.svg
-    # hetu script bytecode
-    - packages/hetu_std/assets/bytecode/std.out
-    - packages/hetu_otp_util/assets/bytecode/otp_util.out
-    - packages/hetu_spotube_plugin/assets/bytecode/spotube_plugin.out
     # NewPipe binaries (desktop only)
     # - packages/flutter_new_pipe_extractor/assets/
   fonts:

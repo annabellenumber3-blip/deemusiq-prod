@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:hetu_script/hetu_script.dart';
 
 import 'package:deemusiq/models/metadata/metadata.dart';
 import 'package:deemusiq/services/metadata/endpoints/album.dart';
@@ -35,10 +34,7 @@ final PluginConfiguration kDeeMusiqNativePluginConfig = PluginConfiguration(
   ],
 );
 
-/// Shared throwaway interpreter: the native endpoints extend the Hetu-backed
-/// base classes (so they satisfy the same types) but override every method, so
-/// this instance is never actually used.
-final Hetu _dummyHetu = Hetu();
+
 
 // ── Playable-source encoding ─────────────────────────────────────────────────
 // Each track carries its audio source in `externalUri` so the audio-source
@@ -203,7 +199,7 @@ List<Map> _list(dynamic v) =>
 
 class _NativeSearch extends MetadataPluginSearchEndpoint {
   final _CatalogApi api;
-  _NativeSearch(this.api) : super(_dummyHetu);
+  _NativeSearch(this.api) : super();
 
   @override
   List<String> get chips => const ["Tracks", "Artists", "Albums", "Playlists"];
@@ -258,7 +254,7 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
 
 class _NativeAlbum extends MetadataPluginAlbumEndpoint {
   final _CatalogApi api;
-  _NativeAlbum(this.api) : super(_dummyHetu);
+  _NativeAlbum(this.api) : super();
 
   @override
   Future<DeeMusiqFullAlbumObject> getAlbum(String id) async {
@@ -306,7 +302,7 @@ class _NativeAlbum extends MetadataPluginAlbumEndpoint {
 
 class _NativeArtist extends MetadataPluginArtistEndpoint {
   final _CatalogApi api;
-  _NativeArtist(this.api) : super(_dummyHetu);
+  _NativeArtist(this.api) : super();
 
   @override
   Future<DeeMusiqFullArtistObject> getArtist(String id) async {
@@ -341,7 +337,7 @@ class _NativeArtist extends MetadataPluginArtistEndpoint {
 
 class _NativePlaylist extends MetadataPluginPlaylistEndpoint {
   final _CatalogApi api;
-  _NativePlaylist(this.api) : super(_dummyHetu);
+  _NativePlaylist(this.api) : super();
 
   @override
   Future<DeeMusiqFullPlaylistObject> getPlaylist(String id) async {
@@ -393,7 +389,7 @@ class _NativePlaylist extends MetadataPluginPlaylistEndpoint {
 
 class _NativeTrack extends MetadataPluginTrackEndpoint {
   final _CatalogApi api;
-  _NativeTrack(this.api) : super(_dummyHetu);
+  _NativeTrack(this.api) : super();
 
   @override
   Future<DeeMusiqFullTrackObject> getTrack(String id) async {
@@ -411,7 +407,7 @@ class _NativeTrack extends MetadataPluginTrackEndpoint {
 
 class _NativeBrowse extends MetadataPluginBrowseEndpoint {
   final _CatalogApi api;
-  _NativeBrowse(this.api) : super(_dummyHetu);
+  _NativeBrowse(this.api) : super();
 
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqBrowseSectionObject<Object>>>
@@ -457,7 +453,7 @@ class _NativeBrowse extends MetadataPluginBrowseEndpoint {
 }
 
 class _NativeUser extends MetadataPluginUserEndpoint {
-  _NativeUser() : super(_dummyHetu);
+  _NativeUser() : super();
 
   @override
   Future<DeeMusiqUserObject> me() async => _deemusiqOwner;
@@ -488,7 +484,7 @@ class _NativeUser extends MetadataPluginUserEndpoint {
 }
 
 class _NativeAuth extends MetadataAuthEndpoint {
-  _NativeAuth() : super(_dummyHetu);
+  _NativeAuth() : super();
 
   // Typed as raw `Stream` to match the base getter's return type exactly
   // (a `Stream<dynamic>` literal is rejected as an invalid override).
@@ -501,11 +497,11 @@ class _NativeAuth extends MetadataAuthEndpoint {
   @override
   Future<void> logout() async {}
   @override
-  Stream<Object?> get authStateStream => _authState;
+  Stream get authStateStream => _authState;
 }
 
 class _NativeCore extends MetadataPluginCore {
-  _NativeCore() : super(_dummyHetu);
+  _NativeCore() : super();
 
   @override
   Future<PluginUpdateAvailable?> checkUpdate(PluginConfiguration pluginConfig) async =>
@@ -518,7 +514,7 @@ class _NativeCore extends MetadataPluginCore {
 
 class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
   final YouTubeEngine youtubeEngine;
-  _NativeAudioSource(this.youtubeEngine) : super(_dummyHetu);
+  _NativeAudioSource(this.youtubeEngine) : super();
 
   @override
   List<DeeMusiqAudioSourceContainerPreset> get supportedPresets => [

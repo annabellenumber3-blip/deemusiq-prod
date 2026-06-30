@@ -1,27 +1,23 @@
 import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:hetu_script/hetu_script.dart';
-import 'package:hetu_std/hetu_std.dart';
 import 'package:deemusiq/utils/platform.dart';
 
 class MetadataAuthEndpoint {
-  final Hetu hetu;
+  MetadataAuthEndpoint();
 
-  MetadataAuthEndpoint(this.hetu);
-
-  Stream get authStateStream =>
-      hetu.eval("metadataPlugin.auth.authStateStream");
+  Stream get authStateStream {
+    throw UnimplementedError('Native plugin must override');
+  }
 
   Future<void> authenticate() async {
-    await hetu.eval("metadataPlugin.auth.authenticate()");
+    throw UnimplementedError('Native plugin must override');
   }
 
   bool isAuthenticated() {
-    return hetu.eval("metadataPlugin.auth.isAuthenticated()") as bool;
+    throw UnimplementedError('Native plugin must override');
   }
 
   Future<void> logout() async {
-    await hetu.eval("metadataPlugin.auth.logout()");
     if (kIsMobile) {
       WebStorageManager.instance().deleteAllData();
       CookieManager.instance().deleteAllCookies();
