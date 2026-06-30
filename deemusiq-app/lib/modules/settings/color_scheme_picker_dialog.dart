@@ -27,18 +27,18 @@ class DeeMusiqColor extends Color {
 }
 
 final Set<DeeMusiqColor> colorsMap = {
-  DeeMusiqColor(Colors.slate.value, name: "slate"),
-  DeeMusiqColor(Colors.gray.value, name: "gray"),
-  DeeMusiqColor(Colors.zinc.value, name: "zinc"),
-  DeeMusiqColor(Colors.neutral.value, name: "neutral"),
-  DeeMusiqColor(Colors.stone.value, name: "stone"),
-  DeeMusiqColor(Colors.red.value, name: "red"),
-  DeeMusiqColor(Colors.orange.value, name: "orange"),
-  DeeMusiqColor(Colors.yellow.value, name: "yellow"),
-  DeeMusiqColor(Colors.green.value, name: "green"),
-  DeeMusiqColor(Colors.blue.value, name: "blue"),
-  DeeMusiqColor(Colors.violet.value, name: "violet"),
-  DeeMusiqColor(Colors.rose.value, name: "rose"),
+  DeeMusiqColor(Colors.slate.toARGB32(), name: "slate"),
+  DeeMusiqColor(Colors.gray.toARGB32(), name: "gray"),
+  DeeMusiqColor(Colors.zinc.toARGB32(), name: "zinc"),
+  DeeMusiqColor(Colors.neutral.toARGB32(), name: "neutral"),
+  DeeMusiqColor(Colors.stone.toARGB32(), name: "stone"),
+  DeeMusiqColor(Colors.red.toARGB32(), name: "red"),
+  DeeMusiqColor(Colors.orange.toARGB32(), name: "orange"),
+  DeeMusiqColor(Colors.yellow.toARGB32(), name: "yellow"),
+  DeeMusiqColor(Colors.green.toARGB32(), name: "green"),
+  DeeMusiqColor(Colors.blue.toARGB32(), name: "blue"),
+  DeeMusiqColor(Colors.violet.toARGB32(), name: "violet"),
+  DeeMusiqColor(Colors.rose.toARGB32(), name: "rose"),
 };
 
 final colorSchemeMap = <String, ColorScheme Function(ThemeMode)>{

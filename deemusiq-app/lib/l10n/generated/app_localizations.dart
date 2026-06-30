@@ -1074,7 +1074,7 @@ abstract class AppLocalizations {
   /// No description provided for @spotube_description.
   ///
   /// In en, this message translates to:
-  /// **'Open source extensible music streaming platform and app, based on BYOMM (Bring your own music metadata) concept'**
+  /// **'DeeMusiq - African music streaming and download platform. It is a drop day.'**
   String get spotube_description;
 
   /// No description provided for @version.

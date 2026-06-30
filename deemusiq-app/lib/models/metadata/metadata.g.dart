@@ -9,7 +9,8 @@ part of 'metadata.dart';
 _$DeeMusiqAudioSourceContainerPresetLossyImpl
     _$$DeeMusiqAudioSourceContainerPresetLossyImplFromJson(Map json) =>
         _$DeeMusiqAudioSourceContainerPresetLossyImpl(
-          type: $enumDecode(_$DeeMusiqMediaCompressionTypeEnumMap, json['type']),
+          type:
+              $enumDecode(_$DeeMusiqMediaCompressionTypeEnumMap, json['type']),
           name: json['name'] as String,
           qualities: (json['qualities'] as List<dynamic>)
               .map((e) => DeeMusiqAudioLossyContainerQuality.fromJson(
@@ -33,7 +34,8 @@ const _$DeeMusiqMediaCompressionTypeEnumMap = {
 _$DeeMusiqAudioSourceContainerPresetLosslessImpl
     _$$DeeMusiqAudioSourceContainerPresetLosslessImplFromJson(Map json) =>
         _$DeeMusiqAudioSourceContainerPresetLosslessImpl(
-          type: $enumDecode(_$DeeMusiqMediaCompressionTypeEnumMap, json['type']),
+          type:
+              $enumDecode(_$DeeMusiqMediaCompressionTypeEnumMap, json['type']),
           name: json['name'] as String,
           qualities: (json['qualities'] as List<dynamic>)
               .map((e) => DeeMusiqAudioLosslessContainerQuality.fromJson(
@@ -104,7 +106,8 @@ _$DeeMusiqAudioSourceStreamObjectImpl
         _$DeeMusiqAudioSourceStreamObjectImpl(
           url: json['url'] as String,
           container: json['container'] as String,
-          type: $enumDecode(_$DeeMusiqMediaCompressionTypeEnumMap, json['type']),
+          type:
+              $enumDecode(_$DeeMusiqMediaCompressionTypeEnumMap, json['type']),
           codec: json['codec'] as String?,
           bitrate: (json['bitrate'] as num?)?.toDouble(),
           bitDepth: (json['bitDepth'] as num?)?.toInt(),
@@ -123,7 +126,8 @@ Map<String, dynamic> _$$DeeMusiqAudioSourceStreamObjectImplToJson(
       'sampleRate': instance.sampleRate,
     };
 
-_$DeeMusiqFullAlbumObjectImpl _$$DeeMusiqFullAlbumObjectImplFromJson(Map json) =>
+_$DeeMusiqFullAlbumObjectImpl _$$DeeMusiqFullAlbumObjectImplFromJson(
+        Map json) =>
     _$DeeMusiqFullAlbumObjectImpl(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -481,7 +485,8 @@ Map<String, dynamic> _$$DeeMusiqLocalTrackObjectImplToJson(
       'runtimeType': instance.$type,
     };
 
-_$DeeMusiqFullTrackObjectImpl _$$DeeMusiqFullTrackObjectImplFromJson(Map json) =>
+_$DeeMusiqFullTrackObjectImpl _$$DeeMusiqFullTrackObjectImplFromJson(
+        Map json) =>
     _$DeeMusiqFullTrackObjectImpl(
       id: json['id'] as String,
       name: json['name'] as String,

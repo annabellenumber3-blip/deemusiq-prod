@@ -70,7 +70,12 @@ Future<void> main(List<String> rawArgs) async {
   AppLogger.runZoned(() async {
     final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
 
-    HttpOverrides.global = BadCertificateAllowlistOverrides();
+    // SECURITY: HttpOverrides with backend TLS certificate pinning.
+    // DeeMusiqHttpOverrides enforces DEEMUSIQ_SERVER_CERT_SHA256 (when set)
+    // for all HTTPS connections to the backend, while preserving the legacy
+    // Spotify bad-certificate workaround scoped to spotify.com hosts only.
+    // Standard PKI validation applies for all other hosts.
+    HttpOverrides.global = DeeMusiqHttpOverrides();
 
     // await registerWindowsScheme("spotify");
 

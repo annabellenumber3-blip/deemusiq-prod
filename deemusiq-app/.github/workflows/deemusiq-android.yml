@@ -37,8 +37,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLUTTER_VERSION: "3.35.2"
-  FLUTTER_CHANNEL: "master"
+  FLUTTER_VERSION: "3.38.5"
+  FLUTTER_CHANNEL: "stable"
 
 jobs:
   # Quality gate — runs on every branch push, PR, tag push and manual run.

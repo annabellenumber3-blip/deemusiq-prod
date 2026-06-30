@@ -12,6 +12,7 @@ import 'package:deemusiq/extensions/context.dart';
 import 'package:deemusiq/extensions/duration.dart';
 import 'package:deemusiq/modules/player/use_progress.dart';
 import 'package:deemusiq/provider/audio_player/audio_player.dart';
+import 'package:deemusiq/provider/audio_player/playback_speed.dart';
 import 'package:deemusiq/provider/audio_player/querying_track_info.dart';
 import 'package:deemusiq/services/audio_player/audio_player.dart';
 import 'package:deemusiq/utils/platform.dart';
@@ -268,7 +269,37 @@ class PlayerControls extends HookConsumerWidget {
                   }),
                 ],
               ),
-              const SizedBox(height: 5)
+              const SizedBox(height: 5),
+              // Playback speed control row
+              if (!compact)
+                Consumer(
+                  builder: (context, ref, _) {
+                    final speed = ref.watch(playbackSpeedProvider);
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Tooltip(
+                          tooltip: TooltipContainer(
+                            child: const Text('Cycle playback speed'),
+                          ).call,
+                          child: Button.ghost(
+                            onPressed: () {
+                              ref
+                                  .read(playbackSpeedProvider.notifier)
+                                  .cycleNext();
+                            },
+                            child: Text(
+                              '${speed}x',
+                              style: theme.typography.small.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
             ],
           ),
         ),

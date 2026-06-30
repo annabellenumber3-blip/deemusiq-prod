@@ -25,11 +25,18 @@ class AudioPlayerStreamListeners {
       (value) => notificationService = value,
     );
 
+    // ── Single position subscription shared across all position-based
+    //     listeners to avoid creating duplicate mpv stream subscriptions.
+    //     Each handler has its own sentinel/guard to avoid duplicate work.
+    final positionSub = audioPlayer.positionStream.listen((position) {
+      _onPositionForSkipSponsor(position);
+      _onPositionForScrobble(position);
+      _onPositionForPrefetch(position);
+    });
+
     final subscriptions = [
       subscribeToPlaylist(),
-      subscribeToSkipSponsor(),
-      subscribeToScrobbleChanged(),
-      subscribeToPosition(),
+      positionSub,
       subscribeToPlayerError(),
     ];
 
@@ -59,111 +66,105 @@ class AudioPlayerStreamListeners {
     });
   }
 
-  StreamSubscription subscribeToSkipSponsor() {
-    return audioPlayer.positionStream.listen((position) async {
-      try {
-        final currentSegments = await ref.read(segmentProvider.future);
+  void _onPositionForSkipSponsor(Duration position) async {
+    try {
+      final currentSegments = await ref.read(segmentProvider.future);
 
-        if (currentSegments?.segments.isNotEmpty != true ||
-            position < const Duration(seconds: 3)) {
-          return;
-        }
-
-        for (final segment in currentSegments!.segments) {
-          final seconds = position.inSeconds;
-
-          if (seconds < segment.start || seconds >= segment.end) continue;
-
-          await audioPlayer.seek(Duration(seconds: segment.end + 1));
-        }
-      } catch (e, stack) {
-        AppLogger.reportError(e, stack);
+      if (currentSegments?.segments.isNotEmpty != true ||
+          position < const Duration(seconds: 3)) {
+        return;
       }
-    });
+
+      for (final segment in currentSegments!.segments) {
+        final seconds = position.inSeconds;
+
+        if (seconds < segment.start || seconds >= segment.end) continue;
+
+        await audioPlayer.seek(Duration(seconds: segment.end + 1));
+      }
+    } catch (e, stack) {
+      AppLogger.reportError(e, stack);
+    }
   }
 
-  StreamSubscription subscribeToScrobbleChanged() {
-    String? lastScrobbled;
-    return audioPlayer.positionStream.listen((position) async {
-      try {
-        final uid = audioPlayerState.activeTrack is DeeMusiqLocalTrackObject
-            ? (audioPlayerState.activeTrack as DeeMusiqLocalTrackObject).path
-            : audioPlayerState.activeTrack?.id;
+  String? _lastScrobbled;
+  void _onPositionForScrobble(Duration position) async {
+    try {
+      final uid = audioPlayerState.activeTrack is DeeMusiqLocalTrackObject
+          ? (audioPlayerState.activeTrack as DeeMusiqLocalTrackObject).path
+          : audioPlayerState.activeTrack?.id;
 
-        /// According to Listenbrainz and Last.fm, a scrobble should be sent
-        /// after 4 minutes of listening or 50% of the track duration,
-        /// whichever is less.
-        final minimumListenTime = min(audioPlayer.duration.inSeconds ~/ 2, 240);
+      /// According to Listenbrainz and Last.fm, a scrobble should be sent
+      /// after 4 minutes of listening or 50% of the track duration,
+      /// whichever is less.
+      final minimumListenTime = min(audioPlayer.duration.inSeconds ~/ 2, 240);
 
-        if (audioPlayerState.activeTrack == null ||
-            lastScrobbled == uid ||
-            position.inSeconds < minimumListenTime ||
-            audioPlayer.duration == Duration.zero ||
-            position == Duration.zero) {
-          return;
-        }
-
-        scrobbler.scrobble(audioPlayerState.activeTrack!);
-        ref
-            .read(metadataPluginScrobbleProvider.notifier)
-            .scrobble(audioPlayerState.activeTrack!);
-        lastScrobbled = uid;
-
-        /// The [Track] from Playlist.getTracks doesn't contain artist images
-        /// so we need to fetch them from the API
-        var activeTrack = audioPlayerState.activeTrack!;
-        if (activeTrack.artists.any((a) => a.images == null)) {
-          final metadataPlugin = await ref.read(metadataPluginProvider.future);
-          final artists = await Future.wait(
-            activeTrack.artists
-                .map((artist) => metadataPlugin!.artist.getArtist(artist.id)),
-          );
-          activeTrack = activeTrack.copyWith(
-            artists: artists
-                .map((e) => DeeMusiqSimpleArtistObject.fromJson(e.toJson()))
-                .toList(),
-          );
-        }
-
-        await history.addTrack(activeTrack);
-      } catch (e, stack) {
-        AppLogger.reportError(e, stack);
+      if (audioPlayerState.activeTrack == null ||
+          _lastScrobbled == uid ||
+          position.inSeconds < minimumListenTime ||
+          audioPlayer.duration == Duration.zero ||
+          position == Duration.zero) {
+        return;
       }
-    });
+
+      scrobbler.scrobble(audioPlayerState.activeTrack!);
+      ref
+          .read(metadataPluginScrobbleProvider.notifier)
+          .scrobble(audioPlayerState.activeTrack!);
+      _lastScrobbled = uid;
+
+      /// The [Track] from Playlist.getTracks doesn't contain artist images
+      /// so we need to fetch them from the API
+      var activeTrack = audioPlayerState.activeTrack!;
+      if (activeTrack.artists.any((a) => a.images == null)) {
+        final metadataPlugin = await ref.read(metadataPluginProvider.future);
+        final artists = await Future.wait(
+          activeTrack.artists
+              .map((artist) => metadataPlugin!.artist.getArtist(artist.id)),
+        );
+        activeTrack = activeTrack.copyWith(
+          artists: artists
+              .map((e) => DeeMusiqSimpleArtistObject.fromJson(e.toJson()))
+              .toList(),
+        );
+      }
+
+      await history.addTrack(activeTrack);
+    } catch (e, stack) {
+      AppLogger.reportError(e, stack);
+    }
   }
 
-  StreamSubscription subscribeToPosition() {
-    String lastTrack = ""; // used to prevent multiple calls to the same track
-    return audioPlayer.positionStream.listen((event) async {
-      final percentProgress =
-          (event.inSeconds / max(audioPlayer.duration.inSeconds, 1)) * 100;
-      try {
-        if (percentProgress < 80 ||
-            audioPlayerState.currentIndex == -1 ||
-            audioPlayerState.currentIndex ==
-                audioPlayerState.tracks.length - 1) {
-          return;
-        }
-        final nextTrack = audioPlayerState.tracks
-            .elementAtOrNull(audioPlayerState.currentIndex + 1);
-
-        if (nextTrack == null ||
-            lastTrack == nextTrack.id ||
-            nextTrack is DeeMusiqLocalTrackObject) {
-          return;
-        }
-
-        try {
-          await ref.read(
-            sourcedTrackProvider(nextTrack as DeeMusiqFullTrackObject).future,
-          );
-        } finally {
-          lastTrack = nextTrack.id;
-        }
-      } catch (e, stack) {
-        AppLogger.reportError(e, stack);
+  String _lastTrack = ''; // used to prevent multiple calls to the same track
+  void _onPositionForPrefetch(Duration event) async {
+    final percentProgress =
+        (event.inSeconds / max(audioPlayer.duration.inSeconds, 1)) * 100;
+    try {
+      if (percentProgress < 80 ||
+          audioPlayerState.currentIndex == -1 ||
+          audioPlayerState.currentIndex ==
+              audioPlayerState.tracks.length - 1) {
+        return;
       }
-    });
+      final nextTrack = audioPlayerState.tracks
+          .elementAtOrNull(audioPlayerState.currentIndex + 1);
+
+      if (nextTrack == null ||
+          _lastTrack == nextTrack.id ||
+          nextTrack is DeeMusiqLocalTrackObject) {
+        return;
+      }
+
+      try {
+        await ref.read(
+          sourcedTrackProvider(nextTrack as DeeMusiqFullTrackObject).future,
+        );
+      } finally {
+        _lastTrack = nextTrack.id;
+      }
+    } catch (e, stack) {
+      AppLogger.reportError(e, stack);
+    }
   }
 
   StreamSubscription subscribeToPlayerError() {

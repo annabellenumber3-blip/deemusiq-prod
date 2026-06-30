@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
-import 'package:deemusiq/services/wallet/wallet_api.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart' show PaymentGatewayConfig;
 
 /// Controls when ads are injected into the playback queue. Fetches ad
@@ -92,8 +91,7 @@ class AdRollService {
   /// Fetch the next ad from the backend. Returns null if no ads available or
   /// the backend is unreachable.
   Future<AdSlot?> _fetchAdFromBackend() async {
-    final api = WalletApiClient.instance;
-    if (!api.isConfigured) return null;
+    if (PaymentGatewayConfig.backendBaseUrl.isEmpty) return null;
 
     try {
       final dio = _client();

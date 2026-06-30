@@ -14,11 +14,9 @@ mixin DeeMusiqAudioPlayersStreams on AudioPlayerInterface {
   }
 
   Stream<Duration> get positionStream {
-    // if (mkSupportedPlatform) {
+    // Returns the raw mpv position stream. Callers should apply their own
+    // throttling / deduplication when multiple listeners subscribe to this.
     return _mkPlayer.stream.position;
-    // } else {
-    //   return _justAudio!.positionStream;
-    // }
   }
 
   Stream<Duration> get bufferedPositionStream {

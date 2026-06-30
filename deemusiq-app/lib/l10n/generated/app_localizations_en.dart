@@ -505,7 +505,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spotube_description =>
-      'Open source extensible music streaming platform and app, based on BYOMM (Bring your own music metadata) concept';
+      'DeeMusiq - African music streaming and download platform. It is a drop day.';
 
   @override
   String get version => 'Version';
@@ -1028,7 +1028,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enable_connect => 'Enable Connect';
 
   @override
-  String get enable_connect_description => 'Control DeeMusiq from other devices';
+  String get enable_connect_description =>
+      'Control DeeMusiq from other devices';
 
   @override
   String get devices => 'Devices';

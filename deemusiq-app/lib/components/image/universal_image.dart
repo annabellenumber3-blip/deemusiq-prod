@@ -3,8 +3,28 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:deemusiq/collections/assets.gen.dart';
+
+/// Configured cache manager with reasonable size limits for album art.
+/// Defaults: max 200 files, max 100MB total cache, stale period 30 days.
+class AlbumArtCacheManager {
+  static CacheManager? _instance;
+  static CacheManager get instance {
+    _instance ??= CacheManager(
+      Config(
+        'album_art_cache',
+        stalePeriod: const Duration(days: 30),
+        maxNrOfCacheObjects: 200,
+        repo: JsonCacheInfoRepository(databaseName: 'album_art_cache'),
+        fileService: HttpFileService(),
+      ),
+    );
+    return _instance!;
+  }
+}
 
 class UniversalImage extends HookWidget {
   final String path;
@@ -36,6 +56,7 @@ class UniversalImage extends HookWidget {
         maxWidth: width?.toInt(),
         cacheKey: path,
         scale: scale,
+        cacheManager: AlbumArtCacheManager.instance,
       );
     } else if (path.startsWith("assets/")) {
       return AssetImage(path);
@@ -55,6 +76,7 @@ class UniversalImage extends HookWidget {
           maxWidth: width?.toInt(),
           cacheKey: path,
           scale: scale,
+          cacheManager: AlbumArtCacheManager.instance,
         ),
         height: height,
         width: width,

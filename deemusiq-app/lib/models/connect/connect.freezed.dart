@@ -506,7 +506,8 @@ class __$$WebSocketLoadEventDataAlbumImplCopyWithImpl<$Res>
       return null;
     }
 
-    return $DeeMusiqSimpleAlbumObjectCopyWith<$Res>(_value.collection!, (value) {
+    return $DeeMusiqSimpleAlbumObjectCopyWith<$Res>(_value.collection!,
+        (value) {
       return _then(_value.copyWith(collection: value));
     });
   }

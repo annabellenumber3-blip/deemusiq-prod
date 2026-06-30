@@ -986,7 +986,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get choose_your_region => '地域を選択';
 
   @override
-  String get choose_your_region_description => 'DeeMusiqがあなたの地域に適したコンテンツを表示します。';
+  String get choose_your_region_description =>
+      'DeeMusiqがあなたの地域に適したコンテンツを表示します。';
 
   @override
   String get choose_your_language => '言語を選択してください';

@@ -85,7 +85,8 @@ mixin _$DeeMusiqAudioSourceContainerPreset {
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(DeeMusiqAudioSourceContainerPresetLossy value)? lossy,
-    TResult Function(DeeMusiqAudioSourceContainerPresetLossless value)? lossless,
+    TResult Function(DeeMusiqAudioSourceContainerPresetLossless value)?
+        lossless,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -96,7 +97,8 @@ mixin _$DeeMusiqAudioSourceContainerPreset {
   /// Create a copy of DeeMusiqAudioSourceContainerPreset
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $DeeMusiqAudioSourceContainerPresetCopyWith<DeeMusiqAudioSourceContainerPreset>
+  $DeeMusiqAudioSourceContainerPresetCopyWith<
+          DeeMusiqAudioSourceContainerPreset>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -321,7 +323,8 @@ class _$DeeMusiqAudioSourceContainerPresetLossyImpl
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(DeeMusiqAudioSourceContainerPresetLossy value)? lossy,
-    TResult Function(DeeMusiqAudioSourceContainerPresetLossless value)? lossless,
+    TResult Function(DeeMusiqAudioSourceContainerPresetLossless value)?
+        lossless,
     required TResult orElse(),
   }) {
     if (lossy != null) {
@@ -372,7 +375,8 @@ abstract class _$$DeeMusiqAudioSourceContainerPresetLosslessImplCopyWith<$Res>
     implements $DeeMusiqAudioSourceContainerPresetCopyWith<$Res> {
   factory _$$DeeMusiqAudioSourceContainerPresetLosslessImplCopyWith(
           _$DeeMusiqAudioSourceContainerPresetLosslessImpl value,
-          $Res Function(_$DeeMusiqAudioSourceContainerPresetLosslessImpl) then) =
+          $Res Function(_$DeeMusiqAudioSourceContainerPresetLosslessImpl)
+              then) =
       __$$DeeMusiqAudioSourceContainerPresetLosslessImplCopyWithImpl<$Res>;
   @override
   @useResult
@@ -546,7 +550,8 @@ class _$DeeMusiqAudioSourceContainerPresetLosslessImpl
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
     TResult Function(DeeMusiqAudioSourceContainerPresetLossy value)? lossy,
-    TResult Function(DeeMusiqAudioSourceContainerPresetLossless value)? lossless,
+    TResult Function(DeeMusiqAudioSourceContainerPresetLossless value)?
+        lossless,
     required TResult orElse(),
   }) {
     if (lossless != null) {
@@ -607,7 +612,8 @@ mixin _$DeeMusiqAudioLossyContainerQuality {
   /// Create a copy of DeeMusiqAudioLossyContainerQuality
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $DeeMusiqAudioLossyContainerQualityCopyWith<DeeMusiqAudioLossyContainerQuality>
+  $DeeMusiqAudioLossyContainerQualityCopyWith<
+          DeeMusiqAudioLossyContainerQuality>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -1186,12 +1192,13 @@ class _$DeeMusiqAudioSourceMatchObjectImpl
 abstract class _DeeMusiqAudioSourceMatchObject
     implements DeeMusiqAudioSourceMatchObject {
   factory _DeeMusiqAudioSourceMatchObject(
-      {required final String id,
-      required final String title,
-      required final List<String> artists,
-      required final Duration duration,
-      final String? thumbnail,
-      required final String externalUri}) = _$DeeMusiqAudioSourceMatchObjectImpl;
+          {required final String id,
+          required final String title,
+          required final List<String> artists,
+          required final Duration duration,
+          final String? thumbnail,
+          required final String externalUri}) =
+      _$DeeMusiqAudioSourceMatchObjectImpl;
 
   factory _DeeMusiqAudioSourceMatchObject.fromJson(Map<String, dynamic> json) =
       _$DeeMusiqAudioSourceMatchObjectImpl.fromJson;
@@ -2496,15 +2503,16 @@ mixin _$DeeMusiqSimpleArtistObject {
   /// Create a copy of DeeMusiqSimpleArtistObject
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $DeeMusiqSimpleArtistObjectCopyWith<DeeMusiqSimpleArtistObject> get copyWith =>
-      throw _privateConstructorUsedError;
+  $DeeMusiqSimpleArtistObjectCopyWith<DeeMusiqSimpleArtistObject>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $DeeMusiqSimpleArtistObjectCopyWith<$Res> {
   factory $DeeMusiqSimpleArtistObjectCopyWith(DeeMusiqSimpleArtistObject value,
           $Res Function(DeeMusiqSimpleArtistObject) then) =
-      _$DeeMusiqSimpleArtistObjectCopyWithImpl<$Res, DeeMusiqSimpleArtistObject>;
+      _$DeeMusiqSimpleArtistObjectCopyWithImpl<$Res,
+          DeeMusiqSimpleArtistObject>;
   @useResult
   $Res call(
       {String id,
@@ -2622,7 +2630,8 @@ class _$DeeMusiqSimpleArtistObjectImpl implements _DeeMusiqSimpleArtistObject {
       final List<DeeMusiqImageObject>? images})
       : _images = images;
 
-  factory _$DeeMusiqSimpleArtistObjectImpl.fromJson(Map<String, dynamic> json) =>
+  factory _$DeeMusiqSimpleArtistObjectImpl.fromJson(
+          Map<String, dynamic> json) =>
       _$$DeeMusiqSimpleArtistObjectImplFromJson(json);
 
   @override
@@ -2680,7 +2689,8 @@ class _$DeeMusiqSimpleArtistObjectImpl implements _DeeMusiqSimpleArtistObject {
   }
 }
 
-abstract class _DeeMusiqSimpleArtistObject implements DeeMusiqSimpleArtistObject {
+abstract class _DeeMusiqSimpleArtistObject
+    implements DeeMusiqSimpleArtistObject {
   factory _DeeMusiqSimpleArtistObject(
           {required final String id,
           required final String name,
@@ -3751,8 +3761,9 @@ abstract class _DeeMusiqImageObject implements DeeMusiqImageObject {
       throw _privateConstructorUsedError;
 }
 
-DeeMusiqPaginationResponseObject<T> _$DeeMusiqPaginationResponseObjectFromJson<T>(
-    Map<String, dynamic> json, T Function(Object?) fromJsonT) {
+DeeMusiqPaginationResponseObject<T>
+    _$DeeMusiqPaginationResponseObjectFromJson<T>(
+        Map<String, dynamic> json, T Function(Object?) fromJsonT) {
   return _DeeMusiqPaginationResponseObject<T>.fromJson(json, fromJsonT);
 }
 
@@ -3968,11 +3979,12 @@ class _$DeeMusiqPaginationResponseObjectImpl<T>
 abstract class _DeeMusiqPaginationResponseObject<T>
     implements DeeMusiqPaginationResponseObject<T> {
   factory _DeeMusiqPaginationResponseObject(
-      {required final int limit,
-      required final int? nextOffset,
-      required final int total,
-      required final bool hasMore,
-      required final List<T> items}) = _$DeeMusiqPaginationResponseObjectImpl<T>;
+          {required final int limit,
+          required final int? nextOffset,
+          required final int total,
+          required final bool hasMore,
+          required final List<T> items}) =
+      _$DeeMusiqPaginationResponseObjectImpl<T>;
 
   factory _DeeMusiqPaginationResponseObject.fromJson(
           Map<String, dynamic> json, T Function(Object?) fromJsonT) =
@@ -4022,15 +4034,16 @@ mixin _$DeeMusiqFullPlaylistObject {
   /// Create a copy of DeeMusiqFullPlaylistObject
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $DeeMusiqFullPlaylistObjectCopyWith<DeeMusiqFullPlaylistObject> get copyWith =>
-      throw _privateConstructorUsedError;
+  $DeeMusiqFullPlaylistObjectCopyWith<DeeMusiqFullPlaylistObject>
+      get copyWith => throw _privateConstructorUsedError;
 }
 
 /// @nodoc
 abstract class $DeeMusiqFullPlaylistObjectCopyWith<$Res> {
   factory $DeeMusiqFullPlaylistObjectCopyWith(DeeMusiqFullPlaylistObject value,
           $Res Function(DeeMusiqFullPlaylistObject) then) =
-      _$DeeMusiqFullPlaylistObjectCopyWithImpl<$Res, DeeMusiqFullPlaylistObject>;
+      _$DeeMusiqFullPlaylistObjectCopyWithImpl<$Res,
+          DeeMusiqFullPlaylistObject>;
   @useResult
   $Res call(
       {String id,
@@ -4229,7 +4242,8 @@ class _$DeeMusiqFullPlaylistObjectImpl implements _DeeMusiqFullPlaylistObject {
       : _images = images,
         _collaborators = collaborators;
 
-  factory _$DeeMusiqFullPlaylistObjectImpl.fromJson(Map<String, dynamic> json) =>
+  factory _$DeeMusiqFullPlaylistObjectImpl.fromJson(
+          Map<String, dynamic> json) =>
       _$$DeeMusiqFullPlaylistObjectImplFromJson(json);
 
   @override
@@ -4323,7 +4337,8 @@ class _$DeeMusiqFullPlaylistObjectImpl implements _DeeMusiqFullPlaylistObject {
   }
 }
 
-abstract class _DeeMusiqFullPlaylistObject implements DeeMusiqFullPlaylistObject {
+abstract class _DeeMusiqFullPlaylistObject
+    implements DeeMusiqFullPlaylistObject {
   factory _DeeMusiqFullPlaylistObject(
       {required final String id,
       required final String name,
@@ -4608,7 +4623,8 @@ class _$DeeMusiqSimplePlaylistObjectImpl
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$DeeMusiqSimplePlaylistObjectImplCopyWith<_$DeeMusiqSimplePlaylistObjectImpl>
+  _$$DeeMusiqSimplePlaylistObjectImplCopyWith<
+          _$DeeMusiqSimplePlaylistObjectImpl>
       get copyWith => __$$DeeMusiqSimplePlaylistObjectImplCopyWithImpl<
           _$DeeMusiqSimplePlaylistObjectImpl>(this, _$identity);
 
@@ -4651,7 +4667,8 @@ abstract class _DeeMusiqSimplePlaylistObject
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$DeeMusiqSimplePlaylistObjectImplCopyWith<_$DeeMusiqSimplePlaylistObjectImpl>
+  _$$DeeMusiqSimplePlaylistObjectImplCopyWith<
+          _$DeeMusiqSimplePlaylistObjectImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -4668,7 +4685,8 @@ mixin _$DeeMusiqSearchResponseObject {
       throw _privateConstructorUsedError;
   List<DeeMusiqSimplePlaylistObject> get playlists =>
       throw _privateConstructorUsedError;
-  List<DeeMusiqFullTrackObject> get tracks => throw _privateConstructorUsedError;
+  List<DeeMusiqFullTrackObject> get tracks =>
+      throw _privateConstructorUsedError;
 
   /// Serializes this DeeMusiqSearchResponseObject to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -4875,7 +4893,8 @@ class _$DeeMusiqSearchResponseObjectImpl
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$DeeMusiqSearchResponseObjectImplCopyWith<_$DeeMusiqSearchResponseObjectImpl>
+  _$$DeeMusiqSearchResponseObjectImplCopyWith<
+          _$DeeMusiqSearchResponseObjectImpl>
       get copyWith => __$$DeeMusiqSearchResponseObjectImplCopyWithImpl<
           _$DeeMusiqSearchResponseObjectImpl>(this, _$identity);
 
@@ -4912,7 +4931,8 @@ abstract class _DeeMusiqSearchResponseObject
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$DeeMusiqSearchResponseObjectImplCopyWith<_$DeeMusiqSearchResponseObjectImpl>
+  _$$DeeMusiqSearchResponseObjectImplCopyWith<
+          _$DeeMusiqSearchResponseObjectImpl>
       get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -5453,7 +5473,8 @@ abstract class _$$DeeMusiqFullTrackObjectImplCopyWith<$Res>
 
 /// @nodoc
 class __$$DeeMusiqFullTrackObjectImplCopyWithImpl<$Res>
-    extends _$DeeMusiqTrackObjectCopyWithImpl<$Res, _$DeeMusiqFullTrackObjectImpl>
+    extends _$DeeMusiqTrackObjectCopyWithImpl<$Res,
+        _$DeeMusiqFullTrackObjectImpl>
     implements _$$DeeMusiqFullTrackObjectImplCopyWith<$Res> {
   __$$DeeMusiqFullTrackObjectImplCopyWithImpl(
       _$DeeMusiqFullTrackObjectImpl _value,

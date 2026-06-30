@@ -1029,7 +1029,8 @@ class AppLocalizationsFi extends AppLocalizations {
   String get enable_connect => 'Ota käyttöön yhdistäminen';
 
   @override
-  String get enable_connect_description => 'Ohjaa DeeMusiqa toiselta laitteelta';
+  String get enable_connect_description =>
+      'Ohjaa DeeMusiqa toiselta laitteelta';
 
   @override
   String get devices => 'Laitteet';
