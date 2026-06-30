@@ -74,8 +74,7 @@ class HomePage extends HookConsumerWidget {
                   return switch (index) {
                     // 0 => const HomeGenresSection(),
                     0 => const HomeRecentlyPlayedSection(),
-                    1 => const HomeForYouSection(),
-                    2 => const HomeFeaturedSection(),
+                    1 => const HomeFeaturedSection(),
                     // 3 => const HomePageFriendsSection(),
                     _ => const HomeNewReleasesSection()
                   };

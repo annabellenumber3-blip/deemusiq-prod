@@ -375,11 +375,6 @@ class _GoogleSignInCard extends HookConsumerWidget {
           else
             Button.primary(
               onPressed: (loading.value || !isConfigured) ? null : handleGoogleSignIn,
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  const Color(0xFF4285F4),
-                ),
-              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

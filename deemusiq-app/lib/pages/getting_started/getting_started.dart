@@ -7,7 +7,6 @@ import 'package:deemusiq/components/titlebar/titlebar.dart';
 import 'package:deemusiq/extensions/context.dart';
 import 'package:deemusiq/pages/getting_started/sections/greeting.dart';
 import 'package:deemusiq/pages/getting_started/sections/playback.dart';
-import 'package:deemusiq/pages/getting_started/sections/privacy_consent.dart';
 import 'package:deemusiq/pages/getting_started/sections/region.dart';
 import 'package:deemusiq/pages/getting_started/sections/support.dart';
 import 'package:auto_route/auto_route.dart';
@@ -95,10 +94,6 @@ class GettingStartedPage extends HookConsumerWidget {
             GettingStartedPageGreetingSection(onNext: onNext),
             GettingStartedPageLanguageRegionSection(onNext: onNext),
             GettingStartedPagePlaybackSection(
-              onNext: onNext,
-              onPrevious: onPrevious,
-            ),
-            GettingStartedPagePrivacyConsentSection(
               onNext: onNext,
               onPrevious: onPrevious,
             ),

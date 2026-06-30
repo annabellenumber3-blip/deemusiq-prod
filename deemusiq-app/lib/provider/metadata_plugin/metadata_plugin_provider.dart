@@ -172,42 +172,8 @@ class MetadataPluginNotifier extends AsyncNotifier<MetadataPluginState> {
   }
 
   Future<void> _loadDefaultPlugins(MetadataPluginState pluginState) async {
-    const plugins = [
-      "spotube-plugin-musicbrainz-listenbrainz",
-      "spotube-plugin-youtube-audio",
-    ];
-
-    for (final plugin in plugins) {
-      final byteData = await rootBundle.load(
-        "assets/plugins/$plugin/plugin.smplug",
-      );
-      final pluginConfig =
-          await extractPluginArchive(byteData.buffer.asUint8List());
-      try {
-        await addPlugin(pluginConfig);
-      } on MetadataPluginException catch (e) {
-        if (e.errorCode == MetadataPluginErrorCode.duplicatePlugin &&
-            await isPluginUpdate(pluginConfig)) {
-          final oldConfig = pluginState.plugins
-              .firstWhereOrNull((p) => p.slug == pluginConfig.slug);
-          if (oldConfig == null) continue;
-          final isDefaultMetadata =
-              oldConfig == pluginState.defaultMetadataPluginConfig;
-          final isDefaultAudioSource =
-              oldConfig == pluginState.defaultAudioSourcePluginConfig;
-
-          await removePlugin(pluginConfig);
-          await addPlugin(pluginConfig);
-
-          if (isDefaultMetadata) {
-            await setDefaultMetadataPlugin(pluginConfig);
-          }
-          if (isDefaultAudioSource) {
-            await setDefaultAudioSourcePlugin(pluginConfig);
-          }
-        }
-      }
-    }
+    // External .smplug plugins removed — DeeMusiq uses only the native
+    // backend provider (kDeeMusiqNativePluginConfig). No assets to load.
   }
 
   Uri _getGithubReleasesUrl(String repoUrl) {
