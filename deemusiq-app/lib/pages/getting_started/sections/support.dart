@@ -108,9 +108,6 @@ class GettingStartedScreenSupportSection extends HookConsumerWidget {
                   leading: const Icon(DeeMusiqIcons.extensions),
                   onPressed: () async {
                     await KVStoreService.setDoneGettingStarted(true);
-                    if (context.mounted) {
-                      context.pushRoute(const SettingsMetadataProviderRoute());
-                    }
                   },
                   child: Text(context.l10n.install_a_metadata_provider),
                 ),

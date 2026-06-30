@@ -17,6 +17,7 @@ import file_selector_macos
 import flutter_inappwebview_macos
 import flutter_new_pipe_extractor
 import flutter_secure_storage_macos
+import google_sign_in_ios
 import local_notifier
 import media_kit_libs_macos_audio
 import open_file_mac
@@ -43,6 +44,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   InAppWebViewFlutterPlugin.register(with: registry.registrar(forPlugin: "InAppWebViewFlutterPlugin"))
   FlutterNewPipeExtractorPlugin.register(with: registry.registrar(forPlugin: "FlutterNewPipeExtractorPlugin"))
   FlutterSecureStoragePlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStoragePlugin"))
+  FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))
   LocalNotifierPlugin.register(with: registry.registrar(forPlugin: "LocalNotifierPlugin"))
   MediaKitLibsMacosAudioPlugin.register(with: registry.registrar(forPlugin: "MediaKitLibsMacosAudioPlugin"))
   OpenFilePlugin.register(with: registry.registrar(forPlugin: "OpenFilePlugin"))

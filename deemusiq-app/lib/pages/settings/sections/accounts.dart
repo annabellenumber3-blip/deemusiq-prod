@@ -19,15 +19,6 @@ class SettingsAccountSection extends HookConsumerWidget {
     return SectionCardWithHeading(
       heading: context.l10n.account,
       children: [
-        ListTile(
-          leading: const Icon(DeeMusiqIcons.extensions),
-          title: Text(context.l10n.plugins),
-          subtitle: Text(context.l10n.configure_plugins),
-          onTap: () {
-            context.pushRoute(const SettingsMetadataProviderRoute());
-          },
-          trailing: const Icon(DeeMusiqIcons.angleRight),
-        ),
         if (scrobbler.asData?.value == null)
           ListTile(
             leading: const Icon(DeeMusiqIcons.music),

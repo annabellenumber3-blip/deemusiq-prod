@@ -88,10 +88,6 @@ class AppRouter extends RootStackRouter {
               page: SettingsRoute.page,
             ),
             AutoRoute(
-              path: "settings/metadata-provider",
-              page: SettingsMetadataProviderRoute.page,
-            ),
-            AutoRoute(
               path: "settings/metadata-provider/metadata-form",
               page: SettingsMetadataProviderFormRoute.page,
             ),

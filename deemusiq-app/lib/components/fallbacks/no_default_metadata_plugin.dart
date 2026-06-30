@@ -32,7 +32,7 @@ class NoDefaultMetadataPlugin extends StatelessWidget {
             leading: const Icon(DeeMusiqIcons.extensions),
             child: Text(context.l10n.manage_metadata_providers),
             onPressed: () {
-              context.pushRoute(const SettingsMetadataProviderRoute());
+              // External plugins removed — DeeMusiq uses native backend only
             },
           ),
         ],
