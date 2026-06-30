@@ -25,17 +25,14 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2.18.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
           git-source: https://github.com/flutter/flutter.git
-
       - name: Install dependencies
         run: flutter pub get
-
       - name: Create .env
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
@@ -48,13 +45,10 @@ jobs:
           RELEASE_CHANNEL=stable
           HIDE_DONATIONS=1
           EOF
-
-      - name: Generate code (build_runner)
+      - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos
-
       - name: Test
         run: flutter test
 
@@ -64,7 +58,6 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2.18.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -103,46 +96,62 @@ jobs:
             --dart-define=DEEMUSIQ_BACKEND_URL="$DEEMUSIQ_BACKEND_URL" \
             --dart-define=DEEMUSIQ_CHANNEL_KEY="$DEEMUSIQ_CHANNEL_KEY"
 
-      - name: Package macOS release
+      - name: Package macOS .dmg
         run: |
           mkdir -p dist
-          # Create .dmg from the .app bundle
           APP_PATH="build/macos/Build/Products/Release/DeeMusiq.app"
-          if [ -d "$APP_PATH" ]; then
-            # Zip the .app for distribution (notarization needed for .dmg)
-            cd build/macos/Build/Products/Release
-            zip -r ../../../../../dist/DeeMusiq-macos-universal.zip DeeMusiq.app
-            cd ../../../../..
-          else
-            echo "::error::macOS .app not found at $APP_PATH"
-            # Fallback: try the Runner.app path
+          # Fallback: Flutter sometimes names it Runner.app
+          if [ ! -d "$APP_PATH" ]; then
             APP_PATH="build/macos/Build/Products/Release/Runner.app"
-            if [ -d "$APP_PATH" ]; then
-              cd build/macos/Build/Products/Release
-              zip -r ../../../../../dist/DeeMusiq-macos-universal.zip Runner.app
-              cd ../../../../..
-            else
-              echo "::error::No .app bundle found"
-              find build/macos -name "*.app" -type d
-              exit 1
-            fi
           fi
-          ls -la dist
+          if [ ! -d "$APP_PATH" ]; then
+            echo "::error::No .app bundle found"
+            find build/macos -name "*.app" -type d
+            exit 1
+          fi
+
+          echo "Found app at: $APP_PATH"
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/.*: //')
+
+          # Create a temporary DMG directory with a symlink to /Applications
+          DMG_DIR="dist/dmg_staging"
+          mkdir -p "$DMG_DIR"
+          cp -R "$APP_PATH" "$DMG_DIR/"
+          ln -s /Applications "$DMG_DIR/Applications"
+
+          # Create .dmg using hdiutil (built into macOS)
+          DMG_NAME="dist/DeeMusiq-macos-universal.dmg"
+          hdiutil create -volname "DeeMusiq" -srcfolder "$DMG_DIR" \
+            -ov -format UDZO "$DMG_NAME"
+          
+          # Also create a .zip for direct distribution
+          cd "$DMG_DIR"
+          zip -r "../../../dist/DeeMusiq-macos-universal.zip" "DeeMusiq.app" 2>/dev/null || \
+          zip -r "../../../dist/DeeMusiq-macos-universal.zip" "Runner.app"
+          cd ../../../
+
+          rm -rf "$DMG_DIR"
+          ls -la dist/
 
       - uses: actions/upload-artifact@v4
         with:
           name: DeeMusiq-macos
-          path: deemusiq-app/dist/DeeMusiq-macos-universal.zip
+          path: |
+            deemusiq-app/dist/DeeMusiq-macos-universal.dmg
+            deemusiq-app/dist/DeeMusiq-macos-universal.zip
           if-no-files-found: error
 
       - name: Attach to GitHub Release (tag builds only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: deemusiq-app/dist/DeeMusiq-macos-universal.zip
+          files: |
+            deemusiq-app/dist/DeeMusiq-macos-universal.dmg
+            deemusiq-app/dist/DeeMusiq-macos-universal.zip
           name: DeeMusiq ${{ github.ref_name }}
           body: |
             DeeMusiq — *It's a drop day.*
 
-            **macOS:** extract `DeeMusiq-macos-universal.zip` and drag `DeeMusiq.app` to Applications.
-            First launch: right-click → Open (Gatekeeper bypass for unsigned dev builds).
+            **macOS:**
+            - `.dmg` — open and drag `DeeMusiq.app` to Applications
+            - `.zip` — extract and right-click → Open (Gatekeeper bypass)

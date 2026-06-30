@@ -25,17 +25,14 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2.18.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
           git-source: https://github.com/flutter/flutter.git
-
       - name: Install dependencies
         run: flutter pub get
-
       - name: Create .env
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
@@ -48,13 +45,10 @@ jobs:
           RELEASE_CHANNEL=stable
           HIDE_DONATIONS=1
           EOF
-
-      - name: Generate code (build_runner)
+      - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos
-
       - name: Test
         run: flutter test
 
@@ -64,7 +58,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2.18.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -72,17 +65,18 @@ jobs:
           cache: true
           git-source: https://github.com/flutter/flutter.git
 
-      - name: Install Linux desktop dependencies
+      - name: Install Linux desktop + packaging deps
         run: |
           sudo apt-get update -y
           sudo apt-get install -y clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev libmpv-dev mpv \
-            libappindicator3-dev libnotify-dev
+            libappindicator3-dev libnotify-dev \
+            file fakeroot dpkg-dev
 
       - name: Enable Linux desktop support
         run: flutter config --enable-linux-desktop
 
-      - name: Install Flutter dependencies
+      - name: Install Flutter deps
         run: flutter pub get
 
       - name: Create .env
@@ -110,30 +104,128 @@ jobs:
             --dart-define=DEEMUSIQ_BACKEND_URL="$DEEMUSIQ_BACKEND_URL" \
             --dart-define=DEEMUSIQ_CHANNEL_KEY="$DEEMUSIQ_CHANNEL_KEY"
 
-      - name: Package Linux release (tar.gz + AppImage dir)
+      - name: Package .deb (x86_64)
         run: |
           mkdir -p dist
-          # tar.gz bundle
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/.*: //')
+          PKG="deemusiq"
+          DEB_DIR="dist/${PKG}_${VERSION}_amd64"
+          mkdir -p "${DEB_DIR}/DEBIAN"
+          mkdir -p "${DEB_DIR}/usr/bin"
+          mkdir -p "${DEB_DIR}/usr/share/applications"
+          mkdir -p "${DEB_DIR}/usr/share/icons/hicolor/256x256/apps"
+          mkdir -p "${DEB_DIR}/opt/deemusiq"
+
+          # Copy bundle
+          cp -r build/linux/x64/release/bundle/* "${DEB_DIR}/opt/deemusiq/"
+
+          # Launcher script
+          cat > "${DEB_DIR}/usr/bin/deemusiq" <<'SCRIPT'
+          #!/bin/bash
+          exec /opt/deemusiq/deemusiq "$@"
+          SCRIPT
+          chmod 755 "${DEB_DIR}/usr/bin/deemusiq"
+
+          # .desktop entry
+          cat > "${DEB_DIR}/usr/share/applications/deemusiq.desktop" <<DESKTOP
+          [Desktop Entry]
+          Name=DeeMusiq
+          Comment=African music streaming — It's a drop day
+          Exec=/usr/bin/deemusiq
+          Icon=deemusiq
+          Type=Application
+          Categories=AudioVideo;Audio;Music;Player;
+          StartupNotify=true
+          Terminal=false
+          DESKTOP
+
+          # Icon (use the app's icon if available)
+          if [ -f "assets/branding/deemusiq-logo.png" ]; then
+            cp assets/branding/deemusiq-logo.png "${DEB_DIR}/usr/share/icons/hicolor/256x256/apps/deemusiq.png"
+          fi
+
+          # DEBIAN control
+          cat > "${DEB_DIR}/DEBIAN/control" <<CTRL
+          Package: deemusiq
+          Version: ${VERSION}
+          Architecture: amd64
+          Maintainer: DeeMusiq <deemusiq@protonmail.com>
+          Description: DeeMusiq — African music streaming and download platform
+           Stream and download the sound of the continent. Artists keep ownership
+           and get paid fairly. Built in South Africa.
+           It's a drop day.
+          Depends: libgtk-3-0, libmpv2, libnotify4, libappindicator3-1
+          Section: sound
+          Priority: optional
+          Homepage: https://deemusiq.github.io/deemusiq/
+          CTRL
+
+          # Build .deb
+          dpkg-deb --build "${DEB_DIR}" "dist/DeeMusiq-linux-amd64.deb"
+          echo "Built: dist/DeeMusiq-linux-amd64.deb"
+
+      - name: Package AppImage
+        run: |
+          # AppImage: package the Flutter bundle as a portable AppImage
+          APPDIR="dist/DeeMusiq.AppDir"
+          mkdir -p "${APPDIR}"
+          cp -r build/linux/x64/release/bundle/* "${APPDIR}/"
+
+          # AppRun launcher
+          cat > "${APPDIR}/AppRun" <<'APPRUN'
+          #!/bin/bash
+          HERE="$(dirname "$(readlink -f "$0")")"
+          export LD_LIBRARY_PATH="${HERE}/lib:${LD_LIBRARY_PATH}"
+          exec "${HERE}/deemusiq" "$@"
+          APPRUN
+          chmod 755 "${APPDIR}/AppRun"
+
+          # .desktop file inside AppDir
+          cp "${APPDIR}/../deemusiq_${VERSION}_amd64/usr/share/applications/deemusiq.desktop" "${APPDIR}/deemusiq.desktop" 2>/dev/null || \
+          cat > "${APPDIR}/deemusiq.desktop" <<DESKTOP
+          [Desktop Entry]
+          Name=DeeMusiq
+          Exec=deemusiq
+          Icon=deemusiq
+          Type=Application
+          Categories=AudioVideo;
+          DESKTOP
+
+          # Download and run appimagetool
+          wget -q -O /tmp/appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool
+          ARCH=x86_64 /tmp/appimagetool "${APPDIR}" "dist/DeeMusiq-linux-x86_64.AppImage"
+          echo "Built: dist/DeeMusiq-linux-x86_64.AppImage"
+
+      - name: Package tar.gz (portable)
+        run: |
           cd build/linux/x64/release
           tar -czf ../../../../dist/DeeMusiq-linux-x86_64.tar.gz bundle
           cd ../../../..
-          # Copy the bundle directory for AppImage builders
-          cp -r build/linux/x64/release/bundle dist/DeeMusiq-linux-x86_64
-          ls -la dist
+          ls -la dist/
 
       - uses: actions/upload-artifact@v4
         with:
           name: DeeMusiq-linux
-          path: deemusiq-app/dist/DeeMusiq-linux-x86_64.tar.gz
+          path: |
+            deemusiq-app/dist/DeeMusiq-linux-amd64.deb
+            deemusiq-app/dist/DeeMusiq-linux-x86_64.AppImage
+            deemusiq-app/dist/DeeMusiq-linux-x86_64.tar.gz
           if-no-files-found: error
 
       - name: Attach to GitHub Release (tag builds only)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: deemusiq-app/dist/DeeMusiq-linux-x86_64.tar.gz
+          files: |
+            deemusiq-app/dist/DeeMusiq-linux-amd64.deb
+            deemusiq-app/dist/DeeMusiq-linux-x86_64.AppImage
+            deemusiq-app/dist/DeeMusiq-linux-x86_64.tar.gz
           name: DeeMusiq ${{ github.ref_name }}
           body: |
             DeeMusiq — *It's a drop day.*
 
-            **Linux:** extract `DeeMusiq-linux-x86_64.tar.gz` and run `./bundle/deemusiq`.
+            **Linux:**
+            - `.deb` — `sudo dpkg -i DeeMusiq-linux-amd64.deb`
+            - `.AppImage` — `chmod +x DeeMusiq-linux-x86_64.AppImage && ./DeeMusiq-linux-x86_64.AppImage`
+            - `.tar.gz` — extract and run `./bundle/deemusiq`
