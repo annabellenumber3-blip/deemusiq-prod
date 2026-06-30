@@ -131,6 +131,7 @@ dependencies:
   pub_semver: ^2.2.0
   change_case: ^1.1.0
   flutter_secure_storage: ^9.2.4
+  google_sign_in: ^6.2.2
   # Have to use the git version due to unresponsive .move() after .add()
   media_kit:
     git:

@@ -8,6 +8,7 @@ import 'package:deemusiq/collections/deemusiq_icons.dart';
 import 'package:deemusiq/models/database/database.dart';
 import 'package:deemusiq/modules/connect/connect_device.dart';
 import 'package:deemusiq/modules/home/sections/featured.dart';
+import 'package:deemusiq/modules/home/sections/for_you.dart';
 import 'package:deemusiq/modules/home/sections/sections.dart';
 import 'package:deemusiq/modules/home/sections/new_releases.dart';
 import 'package:deemusiq/modules/home/sections/recent.dart';
@@ -68,12 +69,13 @@ class HomePage extends HookConsumerWidget {
                 const SliverGap(10),
               const SliverGap(10),
               SliverList.builder(
-                itemCount: 3,
+                itemCount: 4,
                 itemBuilder: (context, index) {
                   return switch (index) {
                     // 0 => const HomeGenresSection(),
                     0 => const HomeRecentlyPlayedSection(),
-                    1 => const HomeFeaturedSection(),
+                    1 => const HomeForYouSection(),
+                    2 => const HomeFeaturedSection(),
                     // 3 => const HomePageFriendsSection(),
                     _ => const HomeNewReleasesSection()
                   };

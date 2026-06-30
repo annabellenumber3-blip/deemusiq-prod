@@ -2,10 +2,12 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:deemusiq/collections/assets.gen.dart';
+import 'package:deemusiq/components/dialogs/age_restriction_dialog.dart';
 import 'package:deemusiq/components/titlebar/titlebar.dart';
 import 'package:deemusiq/extensions/context.dart';
 import 'package:deemusiq/pages/getting_started/sections/greeting.dart';
 import 'package:deemusiq/pages/getting_started/sections/playback.dart';
+import 'package:deemusiq/pages/getting_started/sections/privacy_consent.dart';
 import 'package:deemusiq/pages/getting_started/sections/region.dart';
 import 'package:deemusiq/pages/getting_started/sections/support.dart';
 import 'package:auto_route/auto_route.dart';
@@ -34,6 +36,18 @@ class GettingStartedPage extends HookConsumerWidget {
       );
     }, [pageController]);
 
+    // SA FPB Act: show age restriction on first visit
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final accepted = await AgeRestrictionDialog.showIfNeeded(context);
+        if (!accepted && context.mounted) {
+          // User declined — navigate away or show a blocked screen
+          context.router.popForced();
+        }
+      });
+      return null;
+    }, []);
+
     return Scaffold(
       headers: [
         SafeArea(
@@ -48,12 +62,12 @@ class GettingStartedPage extends HookConsumerWidget {
                     duration: const Duration(milliseconds: 300),
                     child: pageController.hasClients &&
                             (pageController.page == 0 ||
-                                pageController.page == 3)
+                                pageController.page == 4)
                         ? const SizedBox()
                         : Button.secondary(
                             onPressed: () {
                               pageController.animateToPage(
-                                3,
+                                4,
                                 duration: const Duration(milliseconds: 300),
                                 curve: Curves.easeInOut,
                               );
@@ -81,6 +95,10 @@ class GettingStartedPage extends HookConsumerWidget {
             GettingStartedPageGreetingSection(onNext: onNext),
             GettingStartedPageLanguageRegionSection(onNext: onNext),
             GettingStartedPagePlaybackSection(
+              onNext: onNext,
+              onPrevious: onPrevious,
+            ),
+            GettingStartedPagePrivacyConsentSection(
               onNext: onNext,
               onPrevious: onPrevious,
             ),

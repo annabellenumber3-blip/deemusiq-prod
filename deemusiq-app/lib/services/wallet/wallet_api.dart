@@ -409,6 +409,133 @@ class WalletApiClient {
     }
   }
 
+  // ── Google Sign-In ────────────────────────────────────────────────────────
+
+  /// Authenticate with a Google ID token. Returns a backend JWT.
+  Future<String> authWithGoogle({
+    required String idToken,
+    required String deviceId,
+  }) async {
+    try {
+      final res = await _client().post(
+        "/auth/google",
+        data: {"idToken": idToken, "deviceId": deviceId},
+      );
+      final token = (res.data as Map)["token"] as String;
+      _token = token;
+      return token;
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  // ── Anonymous Data Sync ───────────────────────────────────────────────────
+
+  /// Like a song (sends only SHA-256 hash). Idempotent.
+  Future<void> syncLikeSong(String songHash) async {
+    try {
+      await _client().post(
+        "/sync/liked",
+        data: {"songHash": songHash},
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Unlike a song.
+  Future<void> syncUnlikeSong(String songHash) async {
+    try {
+      await _client().delete(
+        "/sync/liked",
+        queryParameters: {"songHash": songHash},
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Fetch all liked song hashes.
+  Future<List<String>> syncFetchLikedSongs() async {
+    try {
+      final res = await _client().get(
+        "/sync/liked",
+        options: await _authed(),
+      );
+      final songs = (res.data as Map)["songs"] as List<dynamic>;
+      return songs.map((s) => (s as Map)["songHash"] as String).toList();
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Create a playlist (name + hashed song IDs).
+  Future<Map<String, dynamic>> syncCreatePlaylist({
+    required String name,
+    required List<String> songHashes,
+  }) async {
+    try {
+      final res = await _client().post(
+        "/sync/playlists",
+        data: {"name": name, "songHashes": songHashes},
+        options: await _authed(),
+      );
+      return Map<String, dynamic>.from(res.data as Map);
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Update a playlist.
+  Future<void> syncUpdatePlaylist({
+    required String id,
+    String? name,
+    List<String>? songHashes,
+  }) async {
+    try {
+      await _client().patch(
+        "/sync/playlists/$id",
+        data: {
+          if (name != null) "name": name,
+          if (songHashes != null) "songHashes": songHashes,
+        },
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Delete a playlist.
+  Future<void> syncDeletePlaylist(String id) async {
+    try {
+      await _client().delete(
+        "/sync/playlists/$id",
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Fetch all user playlists.
+  Future<List<Map<String, dynamic>>> syncFetchPlaylists() async {
+    try {
+      final res = await _client().get(
+        "/sync/playlists",
+        options: await _authed(),
+      );
+      final playlists = (res.data as Map)["playlists"] as List<dynamic>;
+      return playlists
+          .map((p) => Map<String, dynamic>.from(p as Map))
+          .toList();
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
   Future<List<dynamic>> fetchLeaderboard() async {
     try {
       final res = await _client().get("/leaderboard");
@@ -444,6 +571,72 @@ class WalletApiClient {
         queryParameters: {"region": region},
       );
       return Map<String, dynamic>.from(res.data as Map);
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Personalised track recommendations based on the user's liked songs.
+  Future<Map<String, dynamic>> fetchRecommendations() async {
+    try {
+      final res = await _client().get(
+        "/recommendations/for-you",
+        options: await _authed(),
+      );
+      return Map<String, dynamic>.from(res.data as Map);
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Force-refresh the recommendations cache.
+  Future<Map<String, dynamic>> refreshRecommendations() async {
+    try {
+      final res = await _client().post(
+        "/recommendations/refresh",
+        options: await _authed(),
+      );
+      return Map<String, dynamic>.from(res.data as Map);
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Like a track (for recommendations + liked songs playlist).
+  Future<void> likeTrack(String trackId) async {
+    try {
+      await _client().post(
+        "/recommendations/like",
+        data: {"trackId": trackId},
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Unlike a track.
+  Future<void> unlikeTrack(String trackId) async {
+    try {
+      await _client().post(
+        "/recommendations/unlike",
+        data: {"trackId": trackId},
+        options: await _authed(),
+      );
+    } on DioException catch (e) {
+      throw WalletApiException(_message(e));
+    }
+  }
+
+  /// Get the user's liked track IDs.
+  Future<List<String>> fetchLikedTrackIds() async {
+    try {
+      final res = await _client().get(
+        "/recommendations/liked",
+        options: await _authed(),
+      );
+      final list = (res.data as Map)["likedIds"] as List<dynamic>;
+      return list.cast<String>();
     } on DioException catch (e) {
       throw WalletApiException(_message(e));
     }

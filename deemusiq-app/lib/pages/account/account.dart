@@ -9,6 +9,8 @@ import 'package:deemusiq/components/titlebar/titlebar.dart';
 import 'package:deemusiq/components/wallet/wallet_common.dart';
 import 'package:deemusiq/provider/wallet/wallet_provider.dart';
 import 'package:deemusiq/services/wallet/wallet_api.dart';
+import 'package:deemusiq/services/auth/google_auth.dart';
+import 'package:deemusiq/models/wallet/linked_account.dart';
 
 /// Account & security: email/password sign-in, 2FA (TOTP) enrollment, recovery,
 /// and security actions. Drives the `WalletApiClient` auth endpoints. All of it
@@ -34,6 +36,8 @@ class AccountPage extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _EmailPasswordCard(),
+                    Gap(12),
+                    _GoogleSignInCard(),
                     Gap(12),
                     _TotpCard(),
                     Gap(12),
@@ -296,6 +300,96 @@ class _RecoveryCard extends HookConsumerWidget {
             onPressed: loading.value ? null : recover,
             child: const Text("Recover wallet"),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoogleSignInCard extends HookConsumerWidget {
+  const _GoogleSignInCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final loading = useState(false);
+    final signedIn = useState(false);
+    final isConfigured = GoogleAuthService.instance.isConfigured;
+
+    // Check if already signed in with Google.
+    useEffect(() {
+      GoogleAuthService.instance.isSignedIn().then((v) => signedIn.value = v);
+      return null;
+    }, []);
+
+    Future<void> handleGoogleSignIn() => _guard(context, loading, () async {
+          final token = await GoogleAuthService.instance.signIn();
+          signedIn.value = true;
+          await ref.read(walletProvider.notifier).syncFromBackend();
+        }, "Signed in with Google.");
+
+    Future<void> handleSignOut() => _guard(context, loading, () async {
+          await GoogleAuthService.instance.signOut();
+          signedIn.value = false;
+          await ref.read(walletProvider.notifier).syncFromBackend();
+        }, "Signed out of Google.");
+
+    return Card(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(DeeMusiqIcons.google, color: deeMusiqOrange),
+              const Gap(8),
+              Expanded(
+                child: const Text("Google Sign-In").semiBold(),
+              ),
+              if (signedIn.value) ...[
+                const Icon(DeeMusiqIcons.verified,
+                    size: 14, color: Color(0xFF2E7D32)),
+              ],
+            ],
+          ),
+          const Gap(4),
+          Text(
+            isConfigured
+                ? (signedIn.value
+                    ? "Connected. Your liked songs and playlists sync "
+                        "anonymously — only hashed IDs and encrypted names "
+                        "are stored. No personal data leaves your device."
+                    : "Sign in with Google to sync your library across "
+                        "devices. We only store anonymized data (hashed song "
+                        "IDs, encrypted playlist names). No email, name, or "
+                        "location is ever stored.")
+                : "Google Sign-In needs backend connectivity. "
+                    "Connect to the DeeMusiq server to enable.",
+          ).muted().small(),
+          const Gap(12),
+          if (signedIn.value)
+            Button.outline(
+              onPressed: loading.value ? null : handleSignOut,
+              child: const Text("Sign out"),
+            )
+          else
+            Button.primary(
+              onPressed: (loading.value || !isConfigured) ? null : handleGoogleSignIn,
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(
+                  const Color(0xFF4285F4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(DeeMusiqIcons.google, size: 18, color: Colors.white),
+                  const Gap(8),
+                  const Text("Sign in with Google",
+                      style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
         ],
       ),
     );

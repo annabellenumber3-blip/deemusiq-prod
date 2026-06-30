@@ -7,6 +7,7 @@ import 'package:deemusiq/collections/deemusiq_icons.dart';
 /// credentials (see DEEMUSIQ_WALLET.md).
 enum LinkedProvider {
   spotify,
+  google,
   youtubeMusic,
   appleMusic,
   deezer,
@@ -16,6 +17,8 @@ enum LinkedProvider {
     switch (this) {
       case LinkedProvider.spotify:
         return "Spotify";
+      case LinkedProvider.google:
+        return "Google";
       case LinkedProvider.youtubeMusic:
         return "YouTube Music";
       case LinkedProvider.appleMusic:
@@ -31,6 +34,8 @@ enum LinkedProvider {
     switch (this) {
       case LinkedProvider.spotify:
         return "Import your playlists, liked songs and top artists";
+      case LinkedProvider.google:
+        return "Sign in with Google and sync your library";
       case LinkedProvider.youtubeMusic:
         return "Sync library and listening history";
       case LinkedProvider.appleMusic:
@@ -46,6 +51,8 @@ enum LinkedProvider {
     switch (this) {
       case LinkedProvider.spotify:
         return DeeMusiqIcons.spotify;
+      case LinkedProvider.google:
+        return DeeMusiqIcons.google;
       case LinkedProvider.youtubeMusic:
         return DeeMusiqIcons.youtube;
       case LinkedProvider.appleMusic:
@@ -61,6 +68,8 @@ enum LinkedProvider {
     switch (this) {
       case LinkedProvider.spotify:
         return const Color(0xFF1DB954);
+      case LinkedProvider.google:
+        return const Color(0xFF4285F4);
       case LinkedProvider.youtubeMusic:
         return const Color(0xFFFF0000);
       case LinkedProvider.appleMusic:

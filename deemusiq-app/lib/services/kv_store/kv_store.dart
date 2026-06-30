@@ -19,6 +19,18 @@ abstract class KVStoreService {
   static Future<void> setDoneGettingStarted(bool value) async =>
       await sharedPreferences.setBool('doneGettingStarted', value);
 
+  /// SA FPB Act compliance: age verification for explicit content.
+  static bool get ageVerified =>
+      sharedPreferences.getBool('ageVerified') ?? false;
+  static Future<void> setAgeVerified(bool value) async =>
+      await sharedPreferences.setBool('ageVerified', value);
+
+  /// SA POPIA Act compliance: privacy consent.
+  static bool get privacyConsentGiven =>
+      sharedPreferences.getBool('privacyConsentGiven') ?? false;
+  static Future<void> setPrivacyConsentGiven(bool value) async =>
+      await sharedPreferences.setBool('privacyConsentGiven', value);
+
   static bool get askedForBatteryOptimization =>
       sharedPreferences.getBool('askedForBatteryOptimization') ?? false;
   static Future<void> setAskedForBatteryOptimization(bool value) async =>

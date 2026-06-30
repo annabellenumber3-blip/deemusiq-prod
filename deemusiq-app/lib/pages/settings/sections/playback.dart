@@ -4,6 +4,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' show ListTile;
 
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:deemusiq/collections/routes.gr.dart';
@@ -18,6 +19,7 @@ import 'package:deemusiq/provider/metadata_plugin/audio_source/quality_presets.d
 import 'package:deemusiq/provider/user_preferences/user_preferences_provider.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
 import 'package:deemusiq/services/youtube_engine/yt_dlp_engine.dart';
+import 'package:deemusiq/services/audio_player/audio_quality.dart';
 
 import 'package:deemusiq/utils/platform.dart';
 
@@ -32,6 +34,8 @@ class SettingsPlaybackSection extends HookConsumerWidget {
     final sourcePresetsNotifier =
         ref.watch(audioSourcePresetsProvider.notifier);
     final theme = Theme.of(context);
+
+    final youtubeQuality = useState(YouTubeAudioQualityService.quality);
 
     return SectionCardWithHeading(
       heading: context.l10n.playback,
@@ -63,6 +67,22 @@ class SettingsPlaybackSection extends HookConsumerWidget {
               }
             }
             preferencesNotifier.setYoutubeClientEngine(value);
+          },
+        ),
+        AdaptiveSelectTile<YouTubeAudioQuality>(
+          secondary: const Icon(DeeMusiqIcons.audioQuality),
+          title: Text('YouTube Audio Quality'),
+          value: youtubeQuality.value,
+          options: YouTubeAudioQuality.values
+              .map((q) => SelectItemButton(
+                    value: q,
+                    child: Text(q.label),
+                  ))
+              .toList(),
+          onChanged: (value) async {
+            if (value == null) return;
+            await YouTubeAudioQualityService.setQuality(value);
+            youtubeQuality.value = value;
           },
         ),
         if (sourcePresets.presets.isNotEmpty) ...[

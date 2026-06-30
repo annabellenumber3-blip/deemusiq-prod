@@ -16,6 +16,7 @@ import 'package:deemusiq/services/metadata/endpoints/user.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
 import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
+import 'package:deemusiq/services/audio_player/audio_quality.dart';
 
 /// The built-in "plugin" identity DeeMusiq presents in place of any external
 /// metadata provider. It carries no bytecode — the endpoints are native Dart
@@ -555,7 +556,10 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
     if (uri.startsWith(_ytPrefix)) {
       final videoId = uri.substring(_ytPrefix.length);
       final manifest = await youtubeEngine.getStreamManifest(videoId);
-      return manifest.audioOnly
+      final filteredStreams = YouTubeAudioQualityService.filterStreams(
+        manifest.audioOnly,
+      );
+      return filteredStreams
           .map(
             (s) => DeeMusiqAudioSourceStreamObject(
               url: s.url.toString(),
