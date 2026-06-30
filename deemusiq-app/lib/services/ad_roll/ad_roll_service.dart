@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
+import 'package:deemusiq/services/wallet/wallet_api.dart';
+import 'package:deemusiq/services/wallet/payment_service.dart' show PaymentGatewayConfig;
 
 /// Controls when ads are injected into the playback queue. Fetches ad
 /// inventory from the DeeMusiq backend (GET /ads/next) — all ads are YouTube
