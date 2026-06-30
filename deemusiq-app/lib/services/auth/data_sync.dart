@@ -4,7 +4,7 @@ import 'package:deemusiq/services/wallet/wallet_api.dart';
 import 'package:deemusiq/services/wallet/secure_channel.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
-import 'package:cryptography/cryptography.dart';
+import 'package:crypto/crypto.dart' as crypto;
 
 /// Anonymous data sync service for liked songs and playlists.
 ///
@@ -27,8 +27,8 @@ class DataSyncService {
 
   static String hashSongId(String songId) {
     final bytes = utf8.encode(songId);
-    final hash = _sha256.hashSync(bytes);
-    return hexFromBytes(hash.bytes);
+    final hash = crypto.sha256.convert(bytes);
+    return hash.toString();
   }
 
   /// Convert bytes to lowercase hex string.
