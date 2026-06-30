@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
+
+import 'package:crypto/crypto.dart';
 
 const allowList = [
   "spotify.com",
@@ -53,13 +56,23 @@ const String _serverCertPin = String.fromEnvironment(
 bool get serverCertPinningEnabled =>
     _serverCertPin.length == 64 && !_serverCertPin.contains('change-me');
 
-/// Validates the server's X.509 certificate against the pinned hash.
-/// Returns true if pinning is disabled or the cert matches; false if it doesn't.
+/// Validates the server's X.509 certificate against the pinned SHA-256 hash.
+/// Extracts DER bytes from the PEM-encoded certificate, computes SHA-256,
+/// and compares against the pinned value.
 bool validateServerCertSha256(X509Certificate cert) {
   if (!serverCertPinningEnabled) return true;
   final pinned = _serverCertPin.toLowerCase().replaceAll(RegExp(r'[^0-9a-f]'), '');
   if (pinned.length != 64) return true; // malformed pin → don't block
-  final actual = cert.sha256.toString().replaceAll(':', '').toLowerCase();
+
+  // Extract DER bytes from PEM: find base64 content between header and footer.
+  final pem = cert.pem;
+  final lines = pem.split('\n');
+  final b64 = lines
+      .where((l) => !l.startsWith('-----'))
+      .join();
+  final der = base64Decode(b64);
+  final digest = sha256.convert(der);
+  final actual = digest.toString();
   return pinned == actual;
 }
 
