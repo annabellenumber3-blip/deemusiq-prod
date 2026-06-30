@@ -8,7 +8,6 @@ import 'package:deemusiq/collections/deemusiq_icons.dart';
 import 'package:deemusiq/models/database/database.dart';
 import 'package:deemusiq/modules/connect/connect_device.dart';
 import 'package:deemusiq/modules/home/sections/featured.dart';
-import 'package:deemusiq/modules/home/sections/for_you.dart';
 import 'package:deemusiq/modules/home/sections/sections.dart';
 import 'package:deemusiq/modules/home/sections/new_releases.dart';
 import 'package:deemusiq/modules/home/sections/recent.dart';
