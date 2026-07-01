@@ -9,6 +9,7 @@ import 'package:deemusiq/extensions/constrains.dart';
 import 'package:deemusiq/extensions/context.dart';
 import 'package:deemusiq/modules/root/sidebar/sidebar_footer.dart';
 
+import 'package:deemusiq/modules/root/deemusiq_navigation_bar.dart';
 import 'package:deemusiq/provider/user_preferences/user_preferences_provider.dart';
 
 class Sidebar extends HookConsumerWidget {
@@ -123,7 +124,7 @@ class Sidebar extends HookConsumerWidget {
                     ),
             ),
             const SidebarFooter(),
-            if (mediaQuery.lgAndUp) const Gap(130) else const Gap(65),
+            SizedBox(height: ref.watch(navigationPanelHeight) + 63),
           ],
         ),
         const VerticalDivider(),
