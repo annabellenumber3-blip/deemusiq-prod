@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:deemusiq/services/wallet/wallet_api.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
@@ -71,13 +72,12 @@ class GoogleAuthService {
 
     // Fallback: device-based auth when no Google client ID is set
     if (_webClientId.isEmpty) {
-      final deviceId = await DeviceIdentity.instance.id;
-      final res = await WalletApiClient.instance.post(
-        '/auth/device/login',
-        data: {'deviceId': deviceId},
+      final res = await Dio().post(
+        '${PaymentGatewayConfig.backendBaseUrl}/auth/device/login',
+        data: {},
       );
-      if (res['token'] == null) throw GoogleAuthException('Device login failed.');
-      return res['token'] as String;
+      if (res.data?['token'] == null) throw GoogleAuthException('Device login failed.');
+      return res.data['token'] as String;
     }
 
     // Full Google OAuth flow
