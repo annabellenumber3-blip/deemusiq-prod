@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:media_kit/media_kit.dart' hide Track;
 import 'package:deemusiq/models/metadata/metadata.dart';
 import 'package:deemusiq/services/logger/logger.dart';
@@ -18,7 +20,7 @@ class DeeMusiqMedia extends mk.Media {
   static int serverPort = 0;
 
   static String get _host =>
-      kIsWindows ? "localhost" : "127.0.0.1";
+      kIsWindows ? "localhost" : InternetAddress.anyIPv4.address;
 
   final DeeMusiqTrackObject track;
   DeeMusiqMedia(this.track)
@@ -32,14 +34,7 @@ class DeeMusiqMedia extends mk.Media {
               ? track.path
               : "http://$_host:$serverPort/stream/${track.id}",
           extras: track.toJson(),
-        ) {
-    if (track is! DeeMusiqLocalTrackObject) {
-      AppLogger.log.i(
-        '[DeeMusiqMedia] Created media for "${track.name}" (id=${track.id}) '
-        '→ http://$_host:$serverPort/stream/${track.id}',
-      );
-    }
-  }
+        );
 
   factory DeeMusiqMedia.media(Media media) {
     assert(media.extras != null, "[Media] must have extra metadata set");

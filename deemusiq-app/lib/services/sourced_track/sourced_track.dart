@@ -38,14 +38,10 @@ class SourcedTrack extends BasicSourcedTrack {
     required DeeMusiqFullTrackObject query,
     required Ref ref,
   }) async {
-    AppLogger.log.i(
-      '[SourcedTrack.fetchFromTrack] Fetching source for "${query.name}" (id=${query.id}, externalUri=${query.externalUri})',
-    );
     final audioSource = await ref.read(audioSourcePluginProvider.future);
     final audioSourceConfig = await ref.read(metadataPluginsProvider
         .selectAsync((data) => data.defaultAudioSourcePluginConfig));
     if (audioSource == null || audioSourceConfig == null) {
-      AppLogger.log.e('[SourcedTrack.fetchFromTrack] No audio source plugin configured');
       throw MetadataPluginException.noDefaultAudioSourcePlugin();
     }
 
@@ -63,20 +59,10 @@ class SourcedTrack extends BasicSourcedTrack {
         .then((s) => s.firstOrNull);
 
     if (cachedSource == null) {
-      AppLogger.log.i(
-        '[SourcedTrack.fetchFromTrack] No cached source for "${query.name}" — fetching siblings',
-      );
       final siblings = await fetchSiblings(ref: ref, query: query);
       if (siblings.isEmpty) {
-        AppLogger.log.e(
-          '[SourcedTrack.fetchFromTrack] No siblings found for "${query.name}"',
-        );
         throw TrackNotFoundError(query);
       }
-      AppLogger.log.i(
-        '[SourcedTrack.fetchFromTrack] Found ${siblings.length} siblings for "${query.name}", '
-        'top match: "${siblings.first.title}" (${siblings.first.externalUri})',
-      );
 
       await database.into(database.sourceMatchTable).insert(
             SourceMatchTableCompanion.insert(
@@ -87,9 +73,6 @@ class SourcedTrack extends BasicSourcedTrack {
           );
 
       final manifest = await audioSource.audioSource.streams(siblings.first);
-      AppLogger.log.i(
-        '[SourcedTrack.fetchFromTrack] Got ${manifest.length} streams for "${query.name}"',
-      );
 
       return SourcedTrack(
         ref: ref,
@@ -100,16 +83,10 @@ class SourcedTrack extends BasicSourcedTrack {
         query: query,
       );
     }
-    AppLogger.log.i(
-      '[SourcedTrack.fetchFromTrack] Using cached source for "${query.name}"',
-    );
     final item = DeeMusiqAudioSourceMatchObject.fromJson(
       jsonDecode(cachedSource.sourceInfo),
     );
     final manifest = await audioSource.audioSource.streams(item);
-    AppLogger.log.i(
-      '[SourcedTrack.fetchFromTrack] Got ${manifest.length} streams from cache for "${query.name}"',
-    );
 
     final sourcedTrack = SourcedTrack(
       ref: ref,
