@@ -1079,19 +1079,19 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
-  String get spotube_has_an_update => 'স্পটিউবে একটি আপডেট আছে';
+  String get spotube_has_an_update => 'ডিমিউজিক-এ একটি আপডেট আছে';
 
   @override
   String get download_now => 'এখনই ডাউনলোড করুন';
 
   @override
   String nightly_version(Object nightlyBuildNum) {
-    return 'স্পটিউব নাইটলি $nightlyBuildNum প্রকাশিত হয়েছে';
+    return 'ডিমিউজিক নাইটলি $nightlyBuildNum প্রকাশিত হয়েছে';
   }
 
   @override
   String release_version(Object version) {
-    return 'স্পটিউব v$version প্রকাশিত হয়েছে';
+    return 'ডিমিউজিক v$version প্রকাশিত হয়েছে';
   }
 
   @override

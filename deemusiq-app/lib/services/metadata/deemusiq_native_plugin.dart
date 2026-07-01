@@ -232,25 +232,97 @@ List<Map> _list(dynamic v) =>
 
 class _NativeSearch extends MetadataPluginSearchEndpoint {
   final _CatalogApi api;
-  _NativeSearch(this.api) : super();
+  final YouTubeEngine _youtubeEngine;
+  final List<YouTubeEngine> _allEngines;
+  _NativeSearch(this.api, this._youtubeEngine, this._allEngines) : super();
 
   @override
-  List<String> get chips => const ["Tracks", "Artists", "Albums", "Playlists"];
+  List<String> get chips => const ["all", "tracks", "artists", "albums", "playlists"];
+
+  /// Maps a YouTube [Video] search result to a [DeeMusiqFullTrackObject].
+  DeeMusiqFullTrackObject _videoToTrack(Video video) {
+    return DeeMusiqTrackObject.full(
+      id: video.id.value,
+      name: video.title,
+      externalUri: "$_ytPrefix${video.id.value}",
+      artists: video.author.isNotEmpty
+          ? [
+              DeeMusiqSimpleArtistObject(
+                id: video.author,
+                name: video.author,
+                externalUri: "deemusiq:artist:${video.author}",
+              )
+            ]
+          : [],
+      album: DeeMusiqSimpleAlbumObject(
+        id: video.id.value,
+        name: video.title,
+        externalUri: "deemusiq:album:${video.id.value}",
+        artists: video.author.isNotEmpty
+            ? [
+                DeeMusiqSimpleArtistObject(
+                  id: video.author,
+                  name: video.author,
+                  externalUri: "deemusiq:artist:${video.author}",
+                )
+              ]
+            : const [],
+        images: video.thumbnails.isNotEmpty
+            ? [DeeMusiqImageObject(url: video.thumbnails.first.url.toString())]
+            : const [],
+        albumType: DeeMusiqAlbumType.single,
+      ),
+      durationMs: video.duration?.inMilliseconds ?? 0,
+      isrc: "",
+      explicit: false,
+    ) as DeeMusiqFullTrackObject;
+  }
+
+  /// Searches YouTube for tracks as a fallback when the backend is unavailable
+  /// or returns no results.
+  Future<List<DeeMusiqFullTrackObject>> _youtubeTrackSearch(
+      String query, int limit) async {
+    try {
+      final videos = await EngineFailover.tryEngines(
+        engines: _allEngines,
+        operation: (engine) async {
+          final results = await engine.searchVideos(query);
+          return results.take(limit).toList();
+        },
+      );
+      return videos.map(_videoToTrack).toList();
+    } catch (e, stack) {
+      AppLogger.log.w('YouTube search fallback failed: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return [];
+    }
+  }
 
   @override
   Future<DeeMusiqSearchResponseObject> all(String query) async {
-    if (!api.isConfigured) {
-      return DeeMusiqSearchResponseObject(
-          albums: const [], artists: const [], playlists: const [], tracks: const []);
+    // Try backend first
+    if (api.isConfigured) {
+      final d = await api.search(query, "all", 20);
+      if (d != null) {
+        final tracks = _list(d["tracks"]).map(_track).toList();
+        // If backend returned tracks with sources, use those
+        if (tracks.isNotEmpty && tracks.any((t) => t.externalUri.isNotEmpty)) {
+          return DeeMusiqSearchResponseObject(
+            albums: _list(d["albums"]).map(_simpleAlbum).toList(),
+            artists: _list(d["artists"]).map(_fullArtist).toList(),
+            playlists: _list(d["playlists"]).map(_simplePlaylist).toList(),
+            tracks: tracks,
+          );
+        }
+      }
     }
-    final d = await api.search(query, "all", 20);
-    if (d == null) return DeeMusiqSearchResponseObject(
-        albums: const [], artists: const [], playlists: const [], tracks: const []);
+    // Fallback to YouTube search
+    final ytTracks = await _youtubeTrackSearch(query, 20);
     return DeeMusiqSearchResponseObject(
-      albums: _list(d["albums"]).map(_simpleAlbum).toList(),
-      artists: _list(d["artists"]).map(_fullArtist).toList(),
-      playlists: _list(d["playlists"]).map(_simplePlaylist).toList(),
-      tracks: _list(d["tracks"]).map(_track).toList(),
+      albums: const [],
+      artists: const [],
+      playlists: const [],
+      tracks: ytTracks,
     );
   }
 
@@ -284,10 +356,20 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqFullTrackObject>> tracks(
       String query, {int? limit, int? offset}) async {
-    if (!api.isConfigured) return _page(const []);
-    final d = await api.search(query, "track", limit ?? 20);
-    if (d == null) return _page(const []);
-    return _page(_list(d["tracks"]).map(_track).toList());
+    final lim = limit ?? 20;
+    // Try backend first
+    if (api.isConfigured) {
+      final d = await api.search(query, "track", lim);
+      if (d != null) {
+        final tracks = _list(d["tracks"]).map(_track).toList();
+        if (tracks.isNotEmpty && tracks.any((t) => t.externalUri.isNotEmpty)) {
+          return _page(tracks);
+        }
+      }
+    }
+    // Fallback to YouTube search
+    final ytTracks = await _youtubeTrackSearch(query, lim);
+    return _page(ytTracks);
   }
 }
 
@@ -669,19 +751,67 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
   Future<List<DeeMusiqAudioSourceMatchObject>> matches(
       DeeMusiqFullTrackObject track) async {
     final uri = track.externalUri;
-    if (uri.isEmpty) return const [];
-    return [
-      DeeMusiqAudioSourceMatchObject(
-        id: track.id,
-        title: track.name,
-        artists: track.artists.map((a) => a.name).toList(),
-        duration: Duration(milliseconds: track.durationMs),
-        thumbnail: track.album.images.isNotEmpty
-            ? track.album.images.first.url
-            : null,
-        externalUri: uri,
-      ),
-    ];
+    if (uri.isNotEmpty && uri.startsWith(_ytPrefix)) {
+      return [
+        DeeMusiqAudioSourceMatchObject(
+          id: track.id,
+          title: track.name,
+          artists: track.artists.map((a) => a.name).toList(),
+          duration: Duration(milliseconds: track.durationMs),
+          thumbnail: track.album.images.isNotEmpty
+              ? track.album.images.first.url
+              : null,
+          externalUri: uri,
+        ),
+      ];
+    }
+    if (uri.isNotEmpty && uri.startsWith(_urlPrefix)) {
+      return [
+        DeeMusiqAudioSourceMatchObject(
+          id: track.id,
+          title: track.name,
+          artists: track.artists.map((a) => a.name).toList(),
+          duration: Duration(milliseconds: track.durationMs),
+          thumbnail: track.album.images.isNotEmpty
+              ? track.album.images.first.url
+              : null,
+          externalUri: uri,
+        ),
+      ];
+    }
+    // Fallback: search YouTube for the track by name + first artist
+    final searchQuery = StringBuffer(track.name);
+    if (track.artists.isNotEmpty) {
+      searchQuery.write(' ${track.artists.first.name}');
+    }
+    try {
+      final videos = await EngineFailover.tryEngines(
+        engines: allEngines,
+        operation: (engine) async {
+          final results = await engine.searchVideos(searchQuery.toString());
+          return results.take(5).toList();
+        },
+      );
+      if (videos.isEmpty) return const [];
+      return videos.map((video) {
+        return DeeMusiqAudioSourceMatchObject(
+          id: video.id.value,
+          title: video.title,
+          artists: [video.author],
+          duration: video.duration ?? Duration.zero,
+          thumbnail: video.thumbnails.isNotEmpty
+              ? video.thumbnails.first.url.toString()
+              : null,
+          externalUri: "$_ytPrefix${video.id.value}",
+        );
+      }).toList();
+    } catch (e, stack) {
+      AppLogger.log.w(
+        'YouTube fallback search failed for "${track.name}": ${e.toString()}',
+      );
+      AppLogger.reportError(e, stack);
+      return const [];
+    }
   }
 
   @override
@@ -691,12 +821,24 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
     if (uri.startsWith(_ytPrefix)) {
       final videoId = uri.substring(_ytPrefix.length);
       try {
+        AppLogger.log.i('Fetching YouTube streams for videoId=$videoId using engine failover...');
         final manifest = await EngineFailover.tryEngines(
           engines: allEngines,
           operation: (engine) => engine.getStreamManifest(videoId),
         );
+        AppLogger.log.i(
+          'Got manifest for $videoId: ${manifest.audioOnly.length} audio streams before filtering',
+        );
         final filteredStreams = YouTubeAudioQualityService.filterStreams(
           manifest.audioOnly,
+        );
+        if (filteredStreams.isEmpty) {
+          AppLogger.log.w(
+            'All ${manifest.audioOnly.length} streams for $videoId were filtered out by quality settings',
+          );
+        }
+        AppLogger.log.i(
+          'Returning ${filteredStreams.length} streams for $videoId after quality filtering',
         );
         return filteredStreams
             .map(
@@ -709,7 +851,13 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
             )
             .toList();
       } catch (e, stack) {
-        AppLogger.log.w('Failed to get YouTube streams for $videoId: ${e.toString()}');
+        if (e is EngineFailoverException) {
+          AppLogger.log.w(
+            'Engine failover exhausted for $videoId: ${e.message} — Errors: ${e.errors.join(" | ")}',
+          );
+        } else {
+          AppLogger.log.w('Failed to get YouTube streams for $videoId: ${e.toString()}');
+        }
         AppLogger.reportError(e, stack);
         return const [];
       }
@@ -737,7 +885,7 @@ class DeeMusiqNativeEndpoints {
   late final MetadataPluginAlbumEndpoint album = _NativeAlbum(_api);
   late final MetadataPluginArtistEndpoint artist = _NativeArtist(_api);
   late final MetadataPluginBrowseEndpoint browse = _NativeBrowse(_api);
-  late final MetadataPluginSearchEndpoint search = _NativeSearch(_api);
+  late final MetadataPluginSearchEndpoint search;
   late final MetadataPluginPlaylistEndpoint playlist = _NativePlaylist(_api);
   late final MetadataPluginTrackEndpoint track = _NativeTrack(_api);
   late final MetadataPluginUserEndpoint user = _NativeUser();
@@ -745,5 +893,6 @@ class DeeMusiqNativeEndpoints {
 
   DeeMusiqNativeEndpoints(YouTubeEngine youtubeEngine, List<YouTubeEngine> allEngines) {
     audioSource = _NativeAudioSource(youtubeEngine, allEngines);
+    search = _NativeSearch(_api, youtubeEngine, allEngines);
   }
 }

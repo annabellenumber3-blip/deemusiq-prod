@@ -106,7 +106,7 @@ class Sidebar extends HookConsumerWidget {
             Expanded(
               child: mediaQuery.lgAndUp
                   ? NavigationSidebar(
-                      index: selectedIndex,
+                      index: selectedIndex >= 0 ? selectedIndex : 0,
                       onSelected: (index) {
                         final tile = tileList[index];
                         context.navigateTo(tile.route);
@@ -115,7 +115,7 @@ class Sidebar extends HookConsumerWidget {
                     )
                   : NavigationRail(
                       alignment: NavigationRailAlignment.start,
-                      index: selectedIndex,
+                      index: selectedIndex >= 0 ? selectedIndex : 0,
                       onSelected: (index) {
                         final tile = tileList[index];
                         context.navigateTo(tile.route);

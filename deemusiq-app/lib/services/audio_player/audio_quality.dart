@@ -62,11 +62,20 @@ class YouTubeAudioQualityService {
     YouTubeAudioQuality? qualityOverride,
   }) {
     final q = qualityOverride ?? quality;
-    if (q == YouTubeAudioQuality.auto) return streams;
+    if (q == YouTubeAudioQuality.auto) {
+      AppLogger.log.d('Quality filter: auto mode — keeping all ${streams.length} streams');
+      return streams;
+    }
 
-    return streams.where((s) {
+    final filtered = streams.where((s) {
       final bps = s.bitrate.bitsPerSecond;
       return bps >= q.minBitrate && bps <= q.maxBitrate;
-    });
+    }).toList();
+
+    AppLogger.log.i(
+      'Quality filter (${q.label}): ${filtered.length}/${streams.length} streams pass '
+      '(${q.minBitrate}–${q.maxBitrate} bps)',
+    );
+    return filtered;
   }
 }

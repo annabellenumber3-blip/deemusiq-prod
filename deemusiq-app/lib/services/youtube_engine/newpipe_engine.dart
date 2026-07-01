@@ -92,20 +92,28 @@ class NewPipeEngine implements YouTubeEngine {
 
   @override
   Future<StreamManifest> getStreamManifest(String videoId) async {
-    final video = await NewPipeExtractor.getVideoInfo(videoId);
+    try {
+      final video = await NewPipeExtractor.getVideoInfo(videoId);
 
-    final streams =
-        video.audioStreams.map((stream) => _parseAudioStream(stream, videoId));
+      final streams =
+          video.audioStreams.map((stream) => _parseAudioStream(stream, videoId));
 
-    if (streams.isEmpty) {
-      final videoStreams = video.videoStreams
-          .map((stream) => _parseVideoStream(stream, videoId));
-      if (videoStreams.isNotEmpty) {
-        return StreamManifest(videoStreams);
+      if (streams.isEmpty) {
+        final videoStreams = video.videoStreams
+            .map((stream) => _parseVideoStream(stream, videoId));
+        if (videoStreams.isNotEmpty) {
+          AppLogger.log.i('NewPipe: no audio streams for $videoId, using ${videoStreams.length} video streams as audio');
+          return StreamManifest(videoStreams);
+        }
       }
-    }
 
-    return StreamManifest(streams);
+      AppLogger.log.i('NewPipe: got ${streams.length} audio streams for $videoId');
+      return StreamManifest(streams);
+    } catch (e, stack) {
+      AppLogger.log.w('NewPipeEngine: failed to get stream manifest for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override

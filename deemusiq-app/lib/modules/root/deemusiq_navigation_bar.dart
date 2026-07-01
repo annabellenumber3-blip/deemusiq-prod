@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart' show Badge;
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -42,11 +40,8 @@ class DeeMusiqNavigationBar extends HookConsumerWidget {
     final panelHeight = ref.watch(navigationPanelHeight);
 
     final router = context.watchRouter;
-    final selectedIndex = max(
-      0,
-      navbarTileList.indexWhere(
-        (e) => router.currentPath.startsWith(e.pathPrefix),
-      ),
+    final selectedIndex = navbarTileList.indexWhere(
+      (e) => router.currentPath.startsWith(e.pathPrefix),
     );
 
     if (layoutMode == LayoutMode.extended ||
@@ -63,13 +58,13 @@ class DeeMusiqNavigationBar extends HookConsumerWidget {
           children: [
             const Divider(),
             NavigationBar(
-              index: selectedIndex,
+              index: selectedIndex >= 0 ? selectedIndex : 0,
               surfaceBlur: context.theme.surfaceBlur,
               surfaceOpacity: context.theme.surfaceOpacity,
               children: [
                 for (final tile in navbarTileList)
                   NavigationButton(
-                    style: navbarTileList[selectedIndex] == tile
+                    style: selectedIndex >= 0 && navbarTileList[selectedIndex] == tile
                         ? const ButtonStyle.fixed(density: ButtonDensity.icon)
                         : const ButtonStyle.muted(density: ButtonDensity.icon),
                     child: Badge(

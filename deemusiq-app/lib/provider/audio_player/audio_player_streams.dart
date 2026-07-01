@@ -168,7 +168,10 @@ class AudioPlayerStreamListeners {
   }
 
   StreamSubscription subscribeToPlayerError() {
-    return audioPlayer.errorStream.listen((event) {});
+    return audioPlayer.errorStream.listen((event) {
+      AppLogger.log.e('MediaKit player error: $event');
+      AppLogger.reportError(event, StackTrace.current, 'MediaKit player error');
+    });
   }
 }
 

@@ -46,6 +46,7 @@ class EngineFailover {
     // Check internet first
     final conn = await ConnectionChecker.instance.check();
     if (!conn.hasInternet) {
+      AppLogger.log.w('EngineFailover: no internet connection — aborting');
       throw EngineFailoverException(
         'Sorry, no internet',
         isNoInternet: true,
@@ -55,6 +56,7 @@ class EngineFailover {
     final errors = <String>[];
 
     for (final engine in engines) {
+      AppLogger.log.i('EngineFailover: trying ${engine.runtimeType}...');
       for (var attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           final result = await operation(engine).timeout(
@@ -81,6 +83,9 @@ class EngineFailover {
       }
     }
 
+    AppLogger.log.e(
+      'EngineFailover: all engines exhausted. Errors: ${errors.join(" | ")}',
+    );
     throw EngineFailoverException(
       'Something went wrong — please try again later',
       errors: errors,

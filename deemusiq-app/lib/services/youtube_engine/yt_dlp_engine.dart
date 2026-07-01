@@ -76,18 +76,26 @@ class YtDlpEngine implements YouTubeEngine {
 
   @override
   Future<StreamManifest> getStreamManifest(String videoId) async {
-    final formats = await YtDlp.instance.extractInfo(
-      "https://www.youtube.com/watch?v=$videoId",
-      formatSpecifiers: "%(formats)j",
-      extraArgs: [
-        "--no-check-certificate",
-        "--geo-bypass",
-        "--quiet",
-        "--ignore-errors"
-      ],
-    ) as List;
+    try {
+      final formats = await YtDlp.instance.extractInfo(
+        "https://www.youtube.com/watch?v=$videoId",
+        formatSpecifiers: "%(formats)j",
+        extraArgs: [
+          "--no-check-certificate",
+          "--geo-bypass",
+          "--quiet",
+          "--ignore-errors"
+        ],
+      ) as List;
 
-    return _parseFormats(formats, videoId);
+      final manifest = _parseFormats(formats, videoId);
+      AppLogger.log.i('YtDlp: got ${manifest.audioOnly.length} audio streams for $videoId');
+      return manifest;
+    } catch (e, stack) {
+      AppLogger.log.w('YtDlpEngine: failed to get stream manifest for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override

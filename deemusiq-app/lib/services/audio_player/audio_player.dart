@@ -54,7 +54,8 @@ abstract class AudioPlayerInterface {
           ),
         ) {
     _mkPlayer.stream.error.listen((event) {
-      AppLogger.reportError(event, StackTrace.current);
+      AppLogger.log.e('AudioPlayer error: $event');
+      AppLogger.reportError(event, StackTrace.current, 'AudioPlayer error');
     });
   }
 
