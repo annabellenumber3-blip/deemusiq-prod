@@ -92,6 +92,19 @@ class SidebarFooter extends HookConsumerWidget implements NavigationBarItem {
             ),
           ),
           const ConnectDeviceButton.sidebar(),
+          SizedBox(
+            width: double.infinity,
+            child: Button(
+              style: router.topRoute.name == SettingsRoute.name
+                  ? ButtonVariance.secondary
+                  : ButtonVariance.outline,
+              onPressed: () {
+                context.navigateTo(const SettingsRoute());
+              },
+              leading: const Icon(DeeMusiqIcons.settings),
+              child: Text(context.l10n.settings),
+            ),
+          ),
           Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -125,13 +138,6 @@ class SidebarFooter extends HookConsumerWidget implements NavigationBarItem {
                     ),
                   ),
                 ),
-              IconButton(
-                variance: ButtonVariance.ghost,
-                icon: const Icon(DeeMusiqIcons.settings),
-                onPressed: () {
-                  context.navigateTo(const SettingsRoute());
-                },
-              ),
             ],
           ),
         ],
