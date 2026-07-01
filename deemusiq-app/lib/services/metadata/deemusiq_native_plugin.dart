@@ -258,6 +258,7 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
       String query, {int? limit, int? offset}) async {
     if (!api.isConfigured) return _page(const []);
     final d = await api.search(query, "album", limit ?? 20);
+    if (d == null) return _page(const []);
     return _page(_list(d["albums"]).map(_simpleAlbum).toList());
   }
 
@@ -266,6 +267,7 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
       String query, {int? limit, int? offset}) async {
     if (!api.isConfigured) return _page(const []);
     final d = await api.search(query, "artist", limit ?? 20);
+    if (d == null) return _page(const []);
     return _page(_list(d["artists"]).map(_fullArtist).toList());
   }
 
@@ -274,6 +276,7 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
       playlists(String query, {int? limit, int? offset}) async {
     if (!api.isConfigured) return _page(const []);
     final d = await api.search(query, "playlist", limit ?? 20);
+    if (d == null) return _page(const []);
     return _page(_list(d["playlists"]).map(_simplePlaylist).toList());
   }
 
@@ -282,6 +285,7 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
       String query, {int? limit, int? offset}) async {
     if (!api.isConfigured) return _page(const []);
     final d = await api.search(query, "track", limit ?? 20);
+    if (d == null) return _page(const []);
     return _page(_list(d["tracks"]).map(_track).toList());
   }
 }
