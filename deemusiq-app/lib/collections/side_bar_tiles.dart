@@ -63,6 +63,13 @@ List<SideBarTiles> getSidebarTileList(AppLocalizations l10n) => [
         icon: DeeMusiqIcons.wallet,
         title: "Wallet",
       ),
+      SideBarTiles(
+        id: "settings",
+        pathPrefix: "/settings",
+        route: const SettingsRoute(),
+        icon: DeeMusiqIcons.settings,
+        title: l10n.settings,
+      ),
     ];
 
 List<SideBarTiles> getSidebarLibraryTileList(AppLocalizations l10n) => [
