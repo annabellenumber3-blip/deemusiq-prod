@@ -35,4 +35,13 @@ abstract class Env {
       kIsFlatpak || _enableUpdateChecker == "1";
 
   static String discordAppId = "1176718791388975124";
+
+  /// GitHub repo for update checks (org/repo format).
+  /// Override via .env: UPDATE_REPO=s-b-repo/deemusiq
+  @EnviedField(varName: 'UPDATE_REPO', defaultValue: 'deemusiq/deemusiq')
+  static final String updateRepo = _Env.updateRepo;
+
+  /// SHA-256 hash of the current release APK, used by the integrity checker.
+  /// Set via --dart-define=DEEMUSIQ_APK_SHA256=...
+  static const String apkSha256 = String.fromEnvironment('DEEMUSIQ_APK_SHA256', defaultValue: '');
 }

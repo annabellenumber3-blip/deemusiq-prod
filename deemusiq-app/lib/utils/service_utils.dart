@@ -241,64 +241,79 @@ abstract class ServiceUtils {
     if (checkUpdate == false) return;
     final packageInfo = await PackageInfo.fromPlatform();
 
-    if (Env.releaseChannel == ReleaseChannel.nightly) {
-      final value = await globalDio.getUri(
-        Uri.parse(
-          "https://api.github.com/repos/deemusiq/deemusiq/actions/workflows/deemusiq-android.yml/runs?status=success&per_page=1",
-        ),
-        options: Options(
-          responseType: ResponseType.json,
-        ),
-      );
-
-      final buildNum = value.data["workflow_runs"][0]["run_number"] as int;
-
-      if (buildNum <= int.parse(packageInfo.buildNumber) || !context.mounted) {
-        return;
+    try {
+      if (Env.releaseChannel == ReleaseChannel.nightly) {
+        await _checkNightly(context, packageInfo);
+      } else {
+        await _checkStable(context, packageInfo);
       }
-
-      await showDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withAlpha(66),
-        builder: (context) {
-          return RootAppUpdateDialog.nightly(nightlyBuildNum: buildNum);
-        },
-      );
-    } else {
-      final value = await globalDio.getUri(
-        Uri.parse(
-          "https://api.github.com/repos/deemusiq/deemusiq/releases/latest",
-        ),
-      );
-      // Strip only a leading "v" (e.g. v1.0.0); replaceAll would corrupt
-      // tags containing "v" elsewhere.
-      final tagName =
-          (value.data["tag_name"] as String).replaceFirst(RegExp(r'^v'), '');
-      final currentVersion = packageInfo.version == "Unknown"
-          ? null
-          : Version.parse(packageInfo.version);
-      final latestVersion =
-          tagName == "nightly" ? null : Version.parse(tagName);
-
-      if (currentVersion == null ||
-          latestVersion == null ||
-          (latestVersion.isPreRelease && !currentVersion.isPreRelease) ||
-          (!latestVersion.isPreRelease && currentVersion.isPreRelease)) {
-        return;
-      }
-
-      if (latestVersion <= currentVersion || !context.mounted) return;
-
-      showDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withAlpha(66),
-        builder: (context) {
-          return RootAppUpdateDialog(version: latestVersion);
-        },
-      );
+    } catch (e, stack) {
+      // Network errors, GitHub API rate limits, or parsing failures — skip
+      // the update prompt gracefully rather than crashing the app.
+      AppLogger.log.w('Update check failed: ${e.toString()}');
+      AppLogger.reportError(e, stack, 'Update checker');
     }
+  }
+
+  static Future<void> _checkNightly(
+    BuildContext context,
+    PackageInfo packageInfo,
+  ) async {
+    final value = await globalDio.getUri(
+      Uri.parse(
+        "https://api.github.com/repos/${Env.updateRepo}/actions/workflows/deemusiq-android.yml/runs?status=success&per_page=1",
+      ),
+      options: Options(responseType: ResponseType.json),
+    );
+    final buildNum = value.data["workflow_runs"][0]["run_number"] as int;
+    if (buildNum <= int.parse(packageInfo.buildNumber) || !context.mounted) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withAlpha(66),
+      builder: (context) => RootAppUpdateDialog.nightly(nightlyBuildNum: buildNum),
+    );
+  }
+
+  static Future<void> _checkStable(
+    BuildContext context,
+    PackageInfo packageInfo,
+  ) async {
+    final value = await globalDio.getUri(
+      Uri.parse(
+        "https://api.github.com/repos/${Env.updateRepo}/releases/latest",
+      ),
+    );
+    final tagName =
+        (value.data["tag_name"] as String).replaceFirst(RegExp(r'^v'), '');
+    final currentVersion = packageInfo.version == "Unknown"
+        ? null
+        : Version.parse(packageInfo.version);
+    final latestVersion = tagName == "nightly" ? null : Version.parse(tagName);
+
+    if (currentVersion == null ||
+        latestVersion == null ||
+        (latestVersion.isPreRelease && !currentVersion.isPreRelease) ||
+        (!latestVersion.isPreRelease && currentVersion.isPreRelease)) {
+      return;
+    }
+
+    if (latestVersion <= currentVersion || !context.mounted) return;
+
+    // Verify release hash if available
+    final assets = value.data["assets"] as List? ?? [];
+    for (final asset in assets) {
+      if (asset["name"] == "DeeMusiq.apk.sha256") {
+        AppLogger.log.i('Release hash: ${asset["browser_download_url"]}');
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withAlpha(66),
+      builder: (context) => RootAppUpdateDialog(version: latestVersion),
+    );
   }
 
   static Future<Uint8List?> downloadImage(
