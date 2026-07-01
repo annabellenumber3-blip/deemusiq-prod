@@ -99,7 +99,7 @@ class Sidebar extends HookConsumerWidget {
     ];
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Column(
           children: [
