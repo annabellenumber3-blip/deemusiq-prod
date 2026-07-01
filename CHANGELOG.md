@@ -5,6 +5,23 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-07-01 — Update checker hardening + release integrity
+
+#### Fixed
+- **Update checker no longer crashes on GitHub API errors** — wrapped in try/catch,
+  logs via AppLogger, skips gracefully.
+- **Configurable update repo** via `Env.updateRepo` (`.env` or `--dart-define`).
+  Private repos can point to `s-b-repo/deemusiq`, public to `deemusiq/deemusiq`.
+- **Release hash verification** — `Env.apkSha256` exposed via `--dart-define`,
+  logged alongside GitHub release assets for integrity checking.
+- **EngineFailover wired into production** — `_NativeAudioSource.streams()` now
+  calls `EngineFailover.tryEngines()` with all YouTube engines (primary → yt-dlp →
+  NewPipe, 5 retries each with exponential backoff). New `allYouTubeEnginesProvider`
+  returns ordered engine list.
+- **Catalog API nullable** — all `_get()` callers now return `Map<String, dynamic>?`,
+  null-checked at call sites to prevent NPE when backend is unavailable.
+- **Offline DRM** — AES-CBC → AES-GCM (encrypt + decrypt), authenticated encryption.
+
 ### 2026-07-01 — Multi-agent sprint: Hetu removal, Linux build, layout fixes, engine failover
 
 #### Removed
