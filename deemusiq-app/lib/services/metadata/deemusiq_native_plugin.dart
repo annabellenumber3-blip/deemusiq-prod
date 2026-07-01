@@ -329,6 +329,7 @@ class _NativeAlbum extends MetadataPluginAlbumEndpoint {
       String id, {int? offset, int? limit}) async {
     try {
       final a = await api.album(id);
+      if (a == null) throw Exception('Backend unavailable');
       return _page(_list(a["tracks"]).map(_track).toList());
     } catch (e, stack) {
       AppLogger.log.w('Failed to fetch album tracks for $id: ${e.toString()}');
@@ -366,6 +367,7 @@ class _NativeArtist extends MetadataPluginArtistEndpoint {
   Future<DeeMusiqFullArtistObject> getArtist(String id) async {
     try {
       final a = await api.artist(id);
+      if (a == null) throw Exception('Backend unavailable');
       return _fullArtist(a);
     } catch (e, stack) {
       AppLogger.log.w('Failed to fetch artist $id: ${e.toString()}');
@@ -384,6 +386,7 @@ class _NativeArtist extends MetadataPluginArtistEndpoint {
       String id, {int? offset, int? limit}) async {
     try {
       final a = await api.artist(id);
+      if (a == null) return _page(const []);
       return _page(_list(a["topTracks"]).map(_track).toList());
     } catch (e, stack) {
       AppLogger.log.w('Failed to fetch top tracks for artist $id: ${e.toString()}');
@@ -397,6 +400,7 @@ class _NativeArtist extends MetadataPluginArtistEndpoint {
       String id, {int? offset, int? limit}) async {
     try {
       final a = await api.artist(id);
+      if (a == null) return _page(const []);
       return _page(_list(a["albums"]).map(_simpleAlbum).toList());
     } catch (e, stack) {
       AppLogger.log.w('Failed to fetch albums for artist $id: ${e.toString()}');
@@ -424,6 +428,7 @@ class _NativePlaylist extends MetadataPluginPlaylistEndpoint {
   Future<DeeMusiqFullPlaylistObject> getPlaylist(String id) async {
     try {
       final p = await api.playlist(id);
+      if (p == null) throw Exception('Backend unavailable');
       return DeeMusiqFullPlaylistObject(
         id: (p["id"] ?? "").toString(),
         name: (p["title"] ?? "").toString(),
@@ -451,6 +456,7 @@ class _NativePlaylist extends MetadataPluginPlaylistEndpoint {
       String id, {int? offset, int? limit}) async {
     try {
       final p = await api.playlist(id);
+      if (p == null) throw Exception('Backend unavailable');
       return _page(_list(p["tracks"]).map(_track).toList());
     } catch (e, stack) {
       AppLogger.log.w('Failed to fetch playlist tracks for $id: ${e.toString()}');
@@ -495,6 +501,7 @@ class _NativeTrack extends MetadataPluginTrackEndpoint {
   Future<DeeMusiqFullTrackObject> getTrack(String id) async {
     try {
       final t = await api.track(id);
+      if (t == null) throw Exception('Backend unavailable');
       return _track(t);
     } catch (e, stack) {
       AppLogger.log.w('Failed to fetch track $id: ${e.toString()}');
