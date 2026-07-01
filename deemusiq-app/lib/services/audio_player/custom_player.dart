@@ -144,7 +144,7 @@ class CustomPlayer extends Player {
     AppLogger.reportError(error, StackTrace.current, '[MediaKitError]');
 
     _consecutiveErrors++;
-    final userMsg = AudioErrorHandler._userMessageFor(
+    final userMsg = AudioErrorHandler.userMessageFor(
       error,
       AudioErrorCategory.player,
     );

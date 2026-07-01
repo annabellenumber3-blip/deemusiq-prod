@@ -27,7 +27,7 @@ class AudioErrorHandler {
   Future<bool> Function()? onRetryPlayback;
 
   /// Maps error types to user-friendly messages.
-  static String _userMessageFor(
+  static String userMessageFor(
     Object error,
     AudioErrorCategory category,
   ) {
@@ -162,7 +162,7 @@ class AudioErrorHandler {
     bool canSkipTrack = true,
   }) async {
     final category = _categorize(error);
-    final message = _userMessageFor(error, category);
+    final message = userMessageFor(error, category);
 
     // Always log
     AppLogger.log.e(
