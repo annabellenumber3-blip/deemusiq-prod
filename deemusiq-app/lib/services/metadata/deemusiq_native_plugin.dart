@@ -244,6 +244,7 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
           albums: const [], artists: const [], playlists: const [], tracks: const []);
     }
     final d = await api.search(query, "all", 20);
+    if (d == null) return emptySearch;
     return DeeMusiqSearchResponseObject(
       albums: _list(d["albums"]).map(_simpleAlbum).toList(),
       artists: _list(d["artists"]).map(_fullArtist).toList(),
@@ -293,6 +294,7 @@ class _NativeAlbum extends MetadataPluginAlbumEndpoint {
   Future<DeeMusiqFullAlbumObject> getAlbum(String id) async {
     try {
       final a = await api.album(id);
+      if (a == null) throw Exception('Backend unavailable');
       final artistRef = a["artist"] as Map?;
       final tracks = _list(a["tracks"]);
       return DeeMusiqFullAlbumObject(
