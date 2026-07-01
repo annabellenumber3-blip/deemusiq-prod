@@ -16,7 +16,6 @@ class AudioPlayerState with _$AudioPlayerState {
     required List<String> collections,
     @Default(0) int currentIndex,
     @Default([]) List<DeeMusiqTrackObject> tracks,
-    @Default(null) String? errorMessage,
   }) = _AudioPlayerState;
 
   factory AudioPlayerState({
@@ -26,7 +25,6 @@ class AudioPlayerState with _$AudioPlayerState {
     required List<String> collections,
     int currentIndex = 0,
     List<DeeMusiqTrackObject> tracks = const [],
-    String? errorMessage,
   }) {
     assert(
       tracks.every((track) =>

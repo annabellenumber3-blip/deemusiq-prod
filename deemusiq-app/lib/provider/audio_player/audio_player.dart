@@ -112,7 +112,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     final subscriptions = [
       audioPlayer.playingStream.listen((playing) async {
         try {
-          state = state.copyWith(playing: playing, errorMessage: null);
+          state = state.copyWith(playing: playing);
 
           await _updatePlayerState(
             AudioPlayerStateTableCompanion(
@@ -170,14 +170,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         }
       }),
       audioPlayer.userMessageStream.listen((message) {
-        // Surface error messages in the state so the UI can show them
-        state = state.copyWith(errorMessage: message);
-        // Auto-clear after 5 seconds
-        Future.delayed(const Duration(seconds: 5), () {
-          if (state.errorMessage == message) {
-            state = state.copyWith(errorMessage: null);
-          }
-        });
+        AppLogger.log.i('User message from audio: $message');
       }),
     ];
 
