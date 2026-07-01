@@ -109,6 +109,64 @@ App collects stats locally → anonymizes → submits via I2P tunnel
 - Publish leaderboard via I2P DHT
 - Batched push submissions over I2P tunnels
 
+## Network Safety
+
+### Rate Limits — Catalog Distribution
+
+DeeMusiq MUST respect I2P network norms to avoid degrading the network for other users:
+
+| Limit | Value | Rationale |
+|-------|-------|-----------|
+| **Catalog sync interval** | Once per 24 hours (not on every app open) | Prevents flooding the DHT; static snapshots don't need live refresh |
+| **Per-peer bandwidth** | < 1 KB/s sustained for catalog distribution | I2P is a volunteer network; aggressive leeching hurts relay nodes |
+| **Max catalog snapshot size** | 512 KB compressed JSON | Larger payloads belong on I2PSnark, not the DHT |
+| **Delta update frequency** | At most 1 fetch per hour | Even delta updates should be batched |
+| **Concurrent DHT lookups** | Max 4 simultaneous | Respects I2P router resource limits |
+
+### DHT Etiquette
+
+- **TTL on cached entries**: All catalog/leaderboard entries stored in the I2P DHT MUST have a TTL of 24 hours maximum. Stale entries poison the DHT and waste limited storage.
+- **Size limits**: The I2P DHT has practical per-entry limits of ~1 KB. DeeMusiq MUST chunk catalog entries that exceed this and MUST NOT store audio data in the DHT.
+- **Replication factor**: Do not force-replicate entries beyond I2P's default (typically 3–5 replicas). Over-replication is network abuse.
+- **No DHT write amplification**: Never re-publish unchanged entries. Hash the content and compare before republishing.
+
+### What DeeMusiq MUST NOT Do on I2P
+
+| Prohibited Activity | Why |
+|---------------------|-----|
+| **Real-time audio streaming** | I2P latency is too high (500 ms–2 s typical); streaming would saturate tunnels and degrade the network |
+| **Large file transfers (> 10 MB)** | Use I2PSnark (BitTorrent over I2P) for large payloads. The DHT and HTTP proxy are for metadata only |
+| **Clearnet bridging / outproxy** | DeeMusiq must NEVER act as an I2P outproxy (no clearnet gateway). This is the #1 abuse vector on I2P and is banned by most I2P routers. DeeMusiq is a consumer of I2P, not a bridge |
+| **Unthrottled background sync** | All I2P traffic must be user-initiated or on a conservative timer. No continuous background polling |
+| **Sybil attacks / fake nodes** | Never run multiple I2P routers to artificially boost DeeMusiq's presence. One router per backend server is the limit |
+| **I2P DHT as a general-purpose database** | The DHT is for discovery, not storage. Do not store user data, playlists, or payment info in the DHT |
+
+### Architecture Constraints
+
+```
+Permitted (metadata only):
+  App → I2P HTTP Proxy → Catalog Snapshot (GET, ≤ 1 KB/s, 1×/day)
+  App → I2P DHT → Cached Audio Manifest (lookup only, TTL 24h)
+  Backend → I2P DHT → Publish static snapshots (1×/day)
+
+NOT Permitted:
+  App → I2P → YouTube/clearnet (no bridging, ever)
+  App → I2P → Real-time audio stream
+  App → I2P → Large file download (> 10 MB)
+  Backend → I2P → User authentication data
+  Backend → I2P → Payment information
+```
+
+### Implementation Checklist
+
+- [ ] Catalog fetch gated on a 24-hour cooldown timer (stored in SharedPreferences)
+- [ ] HTTP client configured with per-second bandwidth throttle for I2P proxy requests
+- [ ] DHT put operations include `expires=` header (24h max)
+- [ ] Chunked catalog entries for payloads > 1 KB
+- [ ] No SOCKS/outproxy configuration — HTTP proxy only, clearnet fallback is direct
+- [ ] Log warning if any I2P operation exceeds 30 seconds (network health indicator)
+- [ ] User-facing toggle: "Use I2P for catalog" — off by default, requires I2P router running locally
+
 ## Dependencies
 - `i2pd` (C++ I2P router) — runs as daemon on backend server
 - App uses I2P HTTP proxy (`localhost:4444`) — standard HTTP, no new Flutter deps

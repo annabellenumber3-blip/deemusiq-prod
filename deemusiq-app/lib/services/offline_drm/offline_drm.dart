@@ -81,7 +81,7 @@ class OfflineTrackEncryption {
     final key = await _key();
     final iv = await _iv();
 
-    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
+    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.gcm));
     final encrypted = encrypter.encryptBytes(plainBytes, iv: iv);
 
     // Sanitize the output path against path traversal: extract only the base
@@ -136,7 +136,7 @@ class OfflineTrackEncryption {
     final key = await _key();
     final iv = await _iv();
 
-    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
+    final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.gcm));
     try {
       final decrypted = encrypter.decryptBytes(enc.Encrypted(raw), iv: iv);
       return Uint8List.fromList(decrypted);
