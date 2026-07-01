@@ -340,9 +340,11 @@ class SourcedTrack extends BasicSourcedTrack {
     }
 
     // Find the preset with closest quality to the supplied quality
-    return sources.where((source) {
+    final matching = sources.where((source) {
       return source.container == preset.name;
-    }).reduce((prev, curr) {
+    }).toList();
+    if (matching.isEmpty) return null;
+    return matching.reduce((prev, curr) {
       if (quality is DeeMusiqAudioLosslessContainerQuality) {
         final prevDiff = ((prev.sampleRate ?? 0) - quality.sampleRate).abs() +
             ((prev.bitDepth ?? 0) - quality.bitDepth).abs();

@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:media_kit/media_kit.dart' hide Track;
 import 'package:deemusiq/models/metadata/metadata.dart';
@@ -21,7 +20,7 @@ class DeeMusiqMedia extends mk.Media {
   static int serverPort = 0;
 
   static String get _host =>
-      kIsWindows ? "localhost" : InternetAddress.anyIPv4.address;
+      kIsWindows ? "localhost" : "127.0.0.1";
 
   final DeeMusiqTrackObject track;
   DeeMusiqMedia(this.track)
