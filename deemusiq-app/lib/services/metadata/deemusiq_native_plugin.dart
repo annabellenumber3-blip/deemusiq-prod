@@ -108,14 +108,14 @@ class _CatalogApi {
     }
   }
 
-  Future<Map<String, dynamic>> search(String q, String type, int limit) =>
+  Future<Map<String, dynamic>?> search(String q, String type, int limit) =>
       _get("/metadata/search", query: {"q": q, "type": type, "limit": limit});
-  Future<Map<String, dynamic>> home() => _get("/metadata/home");
-  Future<Map<String, dynamic>> artist(String id) => _get("/metadata/artist/$id");
-  Future<Map<String, dynamic>> album(String id) => _get("/metadata/album/$id");
-  Future<Map<String, dynamic>> playlist(String id) =>
+  Future<Map<String, dynamic>?> home() => _get("/metadata/home");
+  Future<Map<String, dynamic>?> artist(String id) => _get("/metadata/artist/$id");
+  Future<Map<String, dynamic>?> album(String id) => _get("/metadata/album/$id");
+  Future<Map<String, dynamic>?> playlist(String id) =>
       _get("/metadata/playlist/$id");
-  Future<Map<String, dynamic>> track(String id) => _get("/metadata/track/$id");
+  Future<Map<String, dynamic>?> track(String id) => _get("/metadata/track/$id");
 }
 
 // ── Mappers: backend JSON → app model objects ────────────────────────────────
