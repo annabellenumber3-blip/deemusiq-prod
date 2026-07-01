@@ -73,11 +73,17 @@ class _CatalogApi {
 
   bool get isConfigured => PaymentGatewayConfig.backendBaseUrl.isNotEmpty;
 
-  Future<Map<String, dynamic>> _get(
+  /// Returns null if the backend is not configured — callers should fall
+  /// back to YouTube search or cached data when this returns null.
+  Future<Map<String, dynamic>?> _get(
     String path, {
     Map<String, dynamic>? query,
   }) async {
     int attempt = 0;
+    if (!isConfigured) {
+      AppLogger.log.i('Backend not configured — returning null for $path');
+      return null;
+    }
     while (true) {
       try {
         final res = await _client().get(path, queryParameters: query);
