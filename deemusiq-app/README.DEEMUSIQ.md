@@ -4,10 +4,10 @@
 > open-source [Spotube](https://github.com/KRTirtho/spotube) engine (BSD-4-Clause — see
 > [`NOTICE.md`](./NOTICE.md)).
 
-**Heads-up (honest status):** the source has been fully rebranded to DeeMusiq, but the
-actual installable file (`.apk`) is **built in the cloud by GitHub Actions** — not on this
-machine (Flutter isn't installed here, and Spotube is a large Flutter app). You don't need
-to install anything: push this folder to GitHub and click one button. ⬇️
+**Heads-up (honest status):** the source has been fully rebranded to DeeMusiq. The Hetu
+scripting engine and external plugin system have been removed — DeeMusiq now uses only its
+native Dart backend plugin. Flutter is installed on this machine and the app builds locally
+for Linux. Other platforms build via GitHub Actions.
 
 ---
 
@@ -150,23 +150,32 @@ breaks builds or ecosystem compatibility for zero benefit:
 
 ## What was rebranded
 See [`NOTICE.md`](./NOTICE.md) for the full list. In short: every place a user sees
-“Spotube” now says **DeeMusiq**, the icon/splash/accent use your orange hexagon, and the
+"Spotube" now says **DeeMusiq**, the icon/splash/accent use your orange hexagon, and the
 Android app id is `za.co.deemusiq.app`. Internal code names were intentionally left alone
 so the app keeps building.
 
-## Building other platforms (Windows / Linux / macOS / iOS)
-The display names for those are already rebranded too. Building them needs more setup
-(packaging, Apple/Windows signing). The upstream Spotube build commands still apply —
-start from `dart cli/cli.dart build <platform>`. Ask and I can add a desktop workflow.
+The Hetu scripting engine and external `.smplug` plugin system have been **removed**.
+DeeMusiq now exclusively uses its own native Dart metadata plugin (`kDeeMusiqNativePluginConfig`)
+that talks to the DeeMusiq backend `/metadata` API. No Spotify, no Hetu, no external plugins.
+
+## Building other platforms (Windows / Linux / macOS)
+The display names for those are already rebranded too. All four platforms build via
+GitHub Actions workflows:
+- `deemusiq-android.yml` — APK build
+- `deemusiq-linux.yml` — `.deb` + `.AppImage` + `.tar.gz`
+- `deemusiq-windows.yml` — `.exe` NSIS installer + portable `.zip`
+- `deemusiq-macos.yml` — `.dmg` + `.zip`
+
+Linux can also be built locally: `flutter build linux --release`. The binary is at
+`build/linux/x64/release/bundle/deemusiq`.
 
 ## Honest caveats
-- I could **not compile/test** the build in this environment, so the **first** Actions run
-  may surface a small fix (a dependency or a Flutter-version nudge). That's normal for a
-  big Flutter app — tell me the error and I'll patch the workflow.
-- This app streams metadata/audio the same way Spotube does (Spotify metadata + YouTube
-  audio). It does **not** host your own artists' uploads — that's the separate “real
-  DeeMusiq platform” we discussed. This rebrand is exactly what you asked for: *Spotube,
-  renamed to DeeMusiq.*
+- **This app streams metadata/audio using YouTube as the audio source.** It does not host
+  your own artists' uploads directly — that's the separate DeeMusiq backend platform.
+  The native plugin proxies catalog data from the backend `/metadata` API.
+- YouTube engine failover is automatic: youtube_explode_dart → yt-dlp → NewPipe with
+  5 retries per engine and exponential backoff. Connection checker pings 8.8.8.8 + 1.1.1.1
+  before attempting playback.
 
 ## Known TODO: drift DB migration tests
 

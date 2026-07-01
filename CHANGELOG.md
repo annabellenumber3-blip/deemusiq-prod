@@ -5,6 +5,100 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### 2026-07-01 — Multi-agent sprint: Hetu removal, Linux build, layout fixes, engine failover
+
+#### Removed
+- **Hetu scripting engine entirely** (~825 lines). All four hetu packages
+  (`hetu_script`, `hetu_std`, `hetu_otp_util`, `hetu_spotube_plugin`) removed
+  from pubspec.yaml plus 5 bytecode/smplug assets. 11 metadata endpoint files
+  stripped — hetu.eval() calls replaced with UnimplementedError stubs. Native
+  plugin overrides all methods so stubs are never reached. `MetadataPlugin.create()`
+  factory (Hetu interpreter) removed — only `MetadataPlugin.native()` remains.
+- **External metadata plugin system.** Deleted 7 files: `modules/metadata_plugins/`
+  (3 files — plugin manager UI), `provider/metadata_plugin/core/repositories.dart`
+  (GitHub plugin search), `provider/metadata_plugin/updater/` (update checker),
+  `pages/settings/metadata_plugins.dart` (install page). Cleaned stale imports
+  from routes, main.dart, use_global_subscriptions, sidebar footer, getting_started.
+- **`localstorage.dart`** — Hetu-only API, deleted.
+- **Stale sub-agent files** — `privacy_consent.dart` and `for_you.dart` removed
+  (had shadcn_flutter API mismatches causing build failures).
+
+#### Fixed
+- **Settings button hidden behind playback bar.** Three-part fix:
+  1. `root_app.dart` — MediaQuery bottom padding now dynamic:
+     `(playerHeight + navHeight) * scaling` instead of hardcoded `100 * scaling`.
+  2. `settings.dart` — `SafeArea(bottom: false)` removed (was blocking the
+     MediaQuery padding from flowing through).
+  3. `sidebar.dart` — `CrossAxisAlignment.start` → `CrossAxisAlignment.stretch`
+     so the sidebar Column fills full height; bottom SizedBox uses
+     `navigationPanelHeight + 63` instead of hardcoded `Gap(130/65)`.
+- **`.smplug` asset loading loop** — `_loadDefaultPlugins()` is now a no-op
+  (external plugins deleted). Removes the repeating "Unable to load asset"
+  error on every app launch.
+- **`data_sync.dart` SHA-256 API** — `_sha256.hashSync()` → `crypto.sha256.convert()`.
+  Removed `cryptography` import, use `package:crypto` instead.
+- **`authStateStream` type conflict** — hetu_std `Stream` vs dart:async `Stream`:
+  resolved by removing Hetu entirely from the endpoint base class.
+- **`WalletApiClient` / `PaymentGatewayConfig` imports** — restored in
+  `ad_roll_service.dart` after being incorrectly stripped.
+- **12 deprecated `Color.value` → `toARGB32()`** in `color_scheme_picker_dialog.dart`.
+- **Flutter version bump** — CI `FLUTTER_VERSION` 3.35.2 → 3.38.5 (stable).
+  `.fvmrc` and `.fvm/fvm_config.json` updated.
+
+#### Added
+- **Connection Checker** (`lib/services/connectivity/connection_checker.dart`) —
+  pings 8.8.8.8 + 1.1.1.1 (4× each) via DNS lookup, 30s result cache,
+  user-facing messages: "Sorry, no internet" / "Bad connection, retrying..." /
+  "Connected — playing...".
+- **YouTube Engine Failover** (`lib/services/connectivity/engine_failover.dart`) —
+  tries youtube_explode_dart → yt-dlp → NewPipe in order, each retried 5×
+  with exponential backoff (1s→16s). Checks internet first — fails immediately
+  if offline. `onRetry` callback for UI feedback. Clear error messages on total
+  failure.
+- **Settings tile in sidebar navigation** — Settings now a first-class nav tile
+  alongside Home, DeeMusiq, Search, Lyrics, Stats, Wallet. Sidebar footer
+  settings button upgraded from tiny ghost icon to full-width outline/secondary
+  button matching Downloads style.
+- **Crossfade / gapless / replay-gain** — `custom_player.dart` and
+  `audio_player_impl.dart` enhanced with `setCrossfade()`, `setGaplessPlayback()`,
+  `setReplayGain()`.
+- **Audio quality settings** — `YouTubeAudioQualityService`: 64/128/256kbps + auto,
+  integrated into `_NativeAudioSource.streams()` for all YouTube engines,
+  quality selector in settings/playback.
+- **Sleep timer service** — `lib/services/sleep_timer/sleep_timer.dart`.
+- **Playback queue management** — `lib/services/queue/playback_queue.dart`.
+- **Album art cache** — `AlbumArtCacheManager` with 200-file / 30-day limits
+  preventing unbounded cache growth.
+
+#### Performance
+- **Memory leak fix** — `CustomPlayer._playerStateStream` now closed on dispose.
+- **Stream consolidation** — Duplicate `positionStream` subscriptions reduced from
+  4 to 2 via shared dispatcher with private callbacks.
+
+#### Security
+- **Cert pinning** — `http-override.dart`: `validateServerCertSha256()` now
+  properly extracts DER from PEM and computes SHA-256 fingerprint (fixed broken
+  `cert.sha256` reference).
+- **Offline DRM** — `offline_drm.dart` rewritten with `encrypt` package + `KVStoreService`.
+  AES-256-GCM encryption, device-bound key via `EncryptedKvStoreService`.
+- **Error handling audit** — 13 files, 21+ issues fixed: empty catch blocks now log
+  with `AppLogger.reportError()`, catalog API calls have try/catch with logging,
+  save/unsave/delete operations log before rethrow.
+
+#### Linux release packaging (local builds verified)
+- Binary name fixed: `spotube` → `deemusiq` (CMakeLists.txt `BINARY_NAME` +
+  `APPLICATION_ID` → `za.co.deemusiq.app`).
+- `.deb` — `dpkg-deb --build`, installs to `/opt/deemusiq/` with `/usr/bin/deemusiq`
+  launcher, `.desktop` entry, proper Depends.
+- `.AppImage` — appimagetool, 45 MB, squashfs compressed.
+- `.tar.gz` — portable extract-and-run bundle.
+
+### 2026-07-01 — DeeMusiq site social links updated
+
+#### Changed
+- **Social links** in `deemusiq-site/index.html` updated to live DeeMusiq accounts:
+  TikTok (`@deemusic19`), Instagram (`@deemusiq`), YouTube (`@deemusiq6639`).
+
 ### 2026-06-12 — De-Spotify: in-house metadata engine + server attestation + Vault-required
 
 #### Added (backend — `s-b-repo/deemusiq-backend`)
