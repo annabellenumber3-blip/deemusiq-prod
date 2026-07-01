@@ -141,6 +141,45 @@ DeeMusiq MUST respect I2P network norms to avoid degrading the network for other
 | **Sybil attacks / fake nodes** | Never run multiple I2P routers to artificially boost DeeMusiq's presence. One router per backend server is the limit |
 | **I2P DHT as a general-purpose database** | The DHT is for discovery, not storage. Do not store user data, playlists, or payment info in the DHT |
 
+### Device Bandwidth Contribution (Network Sustainment)
+
+Every DeeMusiq installation that enables I2P MUST contribute relay bandwidth to the
+network. This is the fundamental I2P social contract — you consume, you contribute.
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| **Minimum relay bandwidth** | 500 KB/s shared transit | Ensures the network has enough capacity for all DeeMusiq users |
+| **Maximum relay bandwidth** | 700 KB/s shared transit | Prevents a single device from dominating or overheating |
+| **Transit tunnel count** | 2–4 exploratory + 2–4 client tunnels | Standard I2P router configuration for a contributing peer |
+| **Grace period** | First 5 minutes after app launch | Allows initial catalog sync before relay traffic begins |
+| **Bandwidth throttle** | CPU-bound, not network-bound | I2P garlic encryption is CPU-intensive; ~700 KB/s is the practical ceiling on mobile/desktop |
+| **User override** | Toggle in Settings → Network → "Contribute to I2P network" | Default ON. Users on metered connections or battery-constrained devices can disable relay while still consuming I2P services |
+| **Impact on DeeMusiq traffic** | Negligible | DeeMusiq's own traffic (catalog sync, leaderboard) is < 5 KB/s. The 500–700 KB/s relay contribution is almost entirely other people's traffic passing through |
+
+#### Why This Matters
+
+```
+Without relay contribution:
+  DeeMusiq users = net consumers → I2P network degrades for everyone
+
+With relay contribution:
+  DeeMusiq users = net contributors → I2P network grows stronger
+  → More capacity for catalog distribution
+  → Better anonymity (more cover traffic)
+  → Faster DHT lookups (more peers)
+```
+
+#### Implementation
+
+```
+App starts → I2P router inits → 5-min grace period
+  → Catalog sync completes (DeeMusiq's own traffic: < 5 KB/s)
+  → Relay tunnels open → begin accepting transit traffic
+  → Throttle to 500–700 KB/s based on CPU temperature/usage
+  → If CPU > 80% or battery < 20%: reduce to 200 KB/s minimum
+  → If user disables: relay stops, catalog/leaderboard still work
+```
+
 ### Architecture Constraints
 
 ```
