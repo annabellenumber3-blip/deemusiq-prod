@@ -20,3 +20,21 @@ final youtubeEngineProvider = Provider((ref) {
     return YouTubeExplodeEngine();
   }
 });
+
+/// All available YouTube engines ordered by user preference (selected first).
+/// Used by EngineFailover to try alternatives when the primary engine fails.
+final allYouTubeEnginesProvider = Provider<List<YouTubeEngine>>((ref) {
+  final primary = ref.watch(youtubeEngineProvider);
+  final all = <YouTubeEngine>[primary];
+  // Add the other engines in fallback order
+  if (primary is! YouTubeExplodeEngine) {
+    all.add(YouTubeExplodeEngine());
+  }
+  if (primary is! YtDlpEngine && YtDlpEngine.isAvailableForPlatform) {
+    all.add(YtDlpEngine());
+  }
+  if (primary is! NewPipeEngine && NewPipeEngine.isAvailableForPlatform) {
+    all.add(NewPipeEngine());
+  }
+  return all;
+});

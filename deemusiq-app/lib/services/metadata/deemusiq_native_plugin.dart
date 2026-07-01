@@ -18,6 +18,8 @@ import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
 import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
 import 'package:deemusiq/services/audio_player/audio_quality.dart';
+import 'package:deemusiq/services/connectivity/engine_failover.dart';
+import 'package:deemusiq/services/connectivity/connection_checker.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 
 /// The built-in "plugin" identity DeeMusiq presents in place of any external
@@ -631,7 +633,8 @@ class _NativeCore extends MetadataPluginCore {
 
 class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
   final YouTubeEngine youtubeEngine;
-  _NativeAudioSource(this.youtubeEngine) : super();
+  final List<YouTubeEngine> allEngines;
+  _NativeAudioSource(this.youtubeEngine, this.allEngines) : super();
 
   @override
   List<DeeMusiqAudioSourceContainerPreset> get supportedPresets => [
@@ -672,7 +675,10 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
     if (uri.startsWith(_ytPrefix)) {
       final videoId = uri.substring(_ytPrefix.length);
       try {
-        final manifest = await youtubeEngine.getStreamManifest(videoId);
+        final manifest = await EngineFailover.tryEngines(
+          engines: allEngines,
+          operation: (engine) => engine.getStreamManifest(videoId),
+        );
         final filteredStreams = YouTubeAudioQualityService.filterStreams(
           manifest.audioOnly,
         );
@@ -721,7 +727,7 @@ class DeeMusiqNativeEndpoints {
   late final MetadataPluginUserEndpoint user = _NativeUser();
   late final MetadataPluginCore core = _NativeCore();
 
-  DeeMusiqNativeEndpoints(YouTubeEngine youtubeEngine) {
-    audioSource = _NativeAudioSource(youtubeEngine);
+  DeeMusiqNativeEndpoints(YouTubeEngine youtubeEngine, List<YouTubeEngine> allEngines) {
+    audioSource = _NativeAudioSource(youtubeEngine, allEngines);
   }
 }

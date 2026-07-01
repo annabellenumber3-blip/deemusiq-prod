@@ -34,8 +34,8 @@ class MetadataPlugin {
   /// DeeMusiq's built-in metadata provider: every endpoint is native Dart
   /// talking to the DeeMusiq backend `/metadata` API (no Spotify, no Hetu
   /// bytecode). This is what the app uses by default.
-  MetadataPlugin.native(YouTubeEngine youtubeEngine) {
-    final n = DeeMusiqNativeEndpoints(youtubeEngine);
+  MetadataPlugin.native(YouTubeEngine youtubeEngine, List<YouTubeEngine> allEngines) {
+    final n = DeeMusiqNativeEndpoints(youtubeEngine, allEngines);
     auth = n.auth;
     audioSource = n.audioSource;
     artist = n.artist;

@@ -553,13 +553,15 @@ final metadataPluginsProvider =
 final metadataPluginProvider = FutureProvider<MetadataPlugin?>(
   (ref) async {
     final youtubeEngine = ref.read(youtubeEngineProvider);
-    return MetadataPlugin.native(youtubeEngine);
+    final allEngines = ref.read(allYouTubeEnginesProvider);
+    return MetadataPlugin.native(youtubeEngine, allEngines);
   },
 );
 
 final audioSourcePluginProvider = FutureProvider<MetadataPlugin?>(
   (ref) async {
     final youtubeEngine = ref.watch(youtubeEngineProvider);
-    return MetadataPlugin.native(youtubeEngine);
+    final allEngines = ref.read(allYouTubeEnginesProvider);
+    return MetadataPlugin.native(youtubeEngine, allEngines);
   },
 );
