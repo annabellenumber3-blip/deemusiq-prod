@@ -342,6 +342,7 @@ class _NativeAlbum extends MetadataPluginAlbumEndpoint {
       {int? offset, int? limit}) async {
     if (!api.isConfigured) return _page(const []);
     final d = await api.home();
+    if (d == null) return _page(const []);
     final albums = <DeeMusiqSimpleAlbumObject>[];
     for (final s in _list(d["sections"])) {
       if (s["type"] == "albums") {
@@ -535,6 +536,7 @@ class _NativeBrowse extends MetadataPluginBrowseEndpoint {
       sections({int? offset, int? limit}) async {
     if (!api.isConfigured) return _page(const []);
     final d = await api.home();
+    if (d == null) return _page(const []);
     final sections = <DeeMusiqBrowseSectionObject<Object>>[];
     for (final s in _list(d["sections"])) {
       final type = s["type"];
