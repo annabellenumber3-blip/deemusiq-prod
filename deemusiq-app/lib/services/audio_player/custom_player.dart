@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:deemusiq/services/audio_player/audio_error_handler.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:flutter_broadcasts/flutter_broadcasts.dart';
@@ -13,11 +14,19 @@ import 'package:deemusiq/utils/platform.dart';
 class CustomPlayer extends Player {
   final StreamController<AudioPlaybackState> _playerStateStream;
 
+  /// Stream of user-facing error messages. Subscribe in the UI to show toasts.
+  final StreamController<String> _userMessageStream =
+      StreamController.broadcast();
+
   late final List<StreamSubscription> _subscriptions;
 
   int _androidAudioSessionId = 0;
   String _packageName = "";
   AndroidAudioManager? _androidAudioManager;
+
+  /// Number of consecutive playback errors. Reset on successful playback.
+  int _consecutiveErrors = 0;
+  static const _maxConsecutiveErrors = 3;
 
   CustomPlayer({super.configuration})
       : _playerStateStream = StreamController.broadcast() {
@@ -30,7 +39,9 @@ class CustomPlayer extends Player {
         _playerStateStream.add(AudioPlaybackState.buffering);
       }),
       stream.playing.listen((playing) {
+        // Reset error count when playback successfully starts
         if (playing) {
+          _consecutiveErrors = 0;
           _playerStateStream.add(AudioPlaybackState.playing);
         } else {
           _playerStateStream.add(AudioPlaybackState.paused);
@@ -46,8 +57,7 @@ class CustomPlayer extends Player {
         }
       }),
       stream.error.listen((event) {
-        AppLogger.log.e('[MediaKitError] $event');
-        AppLogger.reportError(event, StackTrace.current, '[MediaKitError]');
+        _onMediaKitError(event);
       }),
     ];
     PackageInfo.fromPlatform().then((packageInfo) {
@@ -90,6 +100,7 @@ class CustomPlayer extends Player {
   bool get shuffled => state.shuffle;
 
   Stream<AudioPlaybackState> get playerStateStream => _playerStateStream.stream;
+  Stream<String> get userMessageStream => _userMessageStream.stream;
   Stream<bool> get shuffleStream => stream.shuffle;
   Stream<int> get indexChangeStream {
     int oldIndex = state.playlist.index;
@@ -120,8 +131,33 @@ class CustomPlayer extends Player {
       element.cancel();
     }
     await _playerStateStream.close();
+    await _userMessageStream.close();
     await notifyAudioSessionUpdate(false);
     return super.dispose();
+  }
+
+  /// Handles MediaKit errors: logs, notifies the user, and tracks consecutive
+  /// errors. If too many consecutive errors occur, requests a track skip.
+  void _onMediaKitError(dynamic event) {
+    final error = event is Exception ? event : Exception(event.toString());
+    AppLogger.log.e('[MediaKitError] $event');
+    AppLogger.reportError(error, StackTrace.current, '[MediaKitError]');
+
+    _consecutiveErrors++;
+    final userMsg = AudioErrorHandler._userMessageFor(
+      error,
+      AudioErrorCategory.player,
+    );
+    _userMessageStream.add(userMsg);
+
+    // If we hit max consecutive errors, signal that the track should be skipped
+    if (_consecutiveErrors >= _maxConsecutiveErrors) {
+      _userMessageStream.add(
+        'Too many playback errors — skipping to next track...',
+      );
+      AudioErrorHandler.instance.onSkipRequested?.call();
+      _consecutiveErrors = 0;
+    }
   }
 
   NativePlayer get nativePlayer => platform as NativePlayer;

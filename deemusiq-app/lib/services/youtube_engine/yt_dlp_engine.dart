@@ -101,58 +101,76 @@ class YtDlpEngine implements YouTubeEngine {
 
   @override
   Future<Video> getVideo(String videoId) async {
-    final info = await YtDlp.instance.extractInfo(
-      "https://www.youtube.com/watch?v=$videoId",
-      formatSpecifiers: "%()j",
-      extraArgs: [
-        "--skip-download",
-        "--no-check-certificate",
-        "--geo-bypass",
-        "--quiet",
-        "--ignore-errors",
-      ],
-    ) as Map<String, dynamic>;
+    try {
+      final info = await YtDlp.instance.extractInfo(
+        "https://www.youtube.com/watch?v=$videoId",
+        formatSpecifiers: "%()j",
+        extraArgs: [
+          "--skip-download",
+          "--no-check-certificate",
+          "--geo-bypass",
+          "--quiet",
+          "--ignore-errors",
+        ],
+      ) as Map<String, dynamic>;
 
-    return _parseInfo(info);
+      return _parseInfo(info);
+    } catch (e, stack) {
+      AppLogger.log.w('YtDlpEngine: failed to get video for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override
   Future<(Video, StreamManifest)> getVideoWithStreamInfo(String videoId) async {
-    final info = await YtDlp.instance.extractInfo(
-      "https://www.youtube.com/watch?v=$videoId",
-      formatSpecifiers: "%()j",
-      extraArgs: [
-        "--no-check-certificate",
-        "--geo-bypass",
-        "--quiet",
-        "--ignore-errors",
-      ],
-    ) as Map<String, dynamic>;
+    try {
+      final info = await YtDlp.instance.extractInfo(
+        "https://www.youtube.com/watch?v=$videoId",
+        formatSpecifiers: "%()j",
+        extraArgs: [
+          "--no-check-certificate",
+          "--geo-bypass",
+          "--quiet",
+          "--ignore-errors",
+        ],
+      ) as Map<String, dynamic>;
 
-    return (_parseInfo(info), _parseFormats(info["formats"], videoId));
+      return (_parseInfo(info), _parseFormats(info["formats"], videoId));
+    } catch (e, stack) {
+      AppLogger.log.w('YtDlpEngine: failed to get video+streams for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override
   Future<List<Video>> searchVideos(String query) async {
-    final stdout = await YtDlp.instance.extractInfoString(
-      "ytsearch10:$query",
-      formatSpecifiers: "%()j",
-      extraArgs: [
-        "--skip-download",
-        "--no-check-certificate",
-        "--geo-bypass",
-        "--quiet",
-        "--ignore-errors",
-        "--flat-playlist",
-        "--no-playlist",
-      ],
-    );
+    try {
+      final stdout = await YtDlp.instance.extractInfoString(
+        "ytsearch10:$query",
+        formatSpecifiers: "%()j",
+        extraArgs: [
+          "--skip-download",
+          "--no-check-certificate",
+          "--geo-bypass",
+          "--quiet",
+          "--ignore-errors",
+          "--flat-playlist",
+          "--no-playlist",
+        ],
+      );
 
-    final json = jsonDecode(
-      "[${stdout.split("\n").where((s) => s.trim().isNotEmpty).join(",")}]",
-    ) as List;
+      final json = jsonDecode(
+        "[${stdout.split("\n").where((s) => s.trim().isNotEmpty).join(",")}]",
+      ) as List;
 
-    return json.map((e) => _parseInfo(e)).toList();
+      return json.map((e) => _parseInfo(e)).toList();
+    } catch (e, stack) {
+      AppLogger.log.w('YtDlpEngine: search failed for "$query": ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override

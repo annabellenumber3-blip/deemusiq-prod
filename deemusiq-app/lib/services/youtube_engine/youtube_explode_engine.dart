@@ -44,12 +44,15 @@ class IsolatedYoutubeExplode {
       }
     });
 
-    final isolate = await Isolate.spawn(_isolateEntry, receivePort.sendPort);
+    final isolate = await Isolate.spawn(
+      _isolateEntry,
+      receivePort.sendPort,
+    ).timeout(const Duration(seconds: 10)); // Don't hang forever
 
     _instance = IsolatedYoutubeExplode._(
       isolate,
       receivePort,
-      await completer.future,
+      await completer.future.timeout(const Duration(seconds: 10)),
     );
 
     if (completer.isCompleted) {
@@ -110,12 +113,19 @@ class IsolatedYoutubeExplode {
     final responsePort = ReceivePort();
 
     responsePort.listen((message) {
-      completer.complete(message as T);
-      responsePort.close();
+      if (!completer.isCompleted) {
+        completer.complete(message as T);
+        responsePort.close();
+      }
     });
 
     _sendPort.send([responsePort.sendPort, methodName, args]);
-    return completer.future;
+    return completer.future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw TimeoutException(
+        'YoutubeExplode isolate timed out on $methodName',
+      ),
+    );
   }
 
   Future<List<Video>> search(

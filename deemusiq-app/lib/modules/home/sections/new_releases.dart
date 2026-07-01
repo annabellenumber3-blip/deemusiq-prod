@@ -5,7 +5,6 @@ import 'package:deemusiq/components/horizontal_playbutton_card_view/horizontal_p
 import 'package:deemusiq/extensions/context.dart';
 import 'package:deemusiq/models/metadata/metadata.dart';
 import 'package:deemusiq/provider/metadata_plugin/album/releases.dart';
-import 'package:deemusiq/provider/metadata_plugin/core/auth.dart';
 import 'package:deemusiq/provider/metadata_plugin/utils/common.dart';
 import 'package:deemusiq/services/metadata/errors/exceptions.dart';
 
@@ -14,14 +13,11 @@ class HomeNewReleasesSection extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, ref) {
-    final authenticated = ref.watch(metadataPluginAuthenticatedProvider);
-
     final newReleases = ref.watch(metadataPluginAlbumReleasesProvider);
     final newReleasesNotifier =
         ref.read(metadataPluginAlbumReleasesProvider.notifier);
 
-    if (authenticated.asData?.value != true ||
-        newReleases.isLoading ||
+    if (newReleases.isLoading ||
         newReleases.asData?.value.items.isEmpty == true) {
       return const SizedBox.shrink();
     }

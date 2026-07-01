@@ -3,14 +3,13 @@ import 'dart:io';
 
 import 'package:deemusiq/services/logger/logger.dart';
 
-/// Checks internet connectivity by pinging DNS servers and doing DNS lookups.
+/// Checks internet connectivity by doing DNS lookups against well-known hosts.
 /// Results are cached for [cacheDuration] to avoid spamming the network.
 class ConnectionChecker {
   ConnectionChecker._();
   static final ConnectionChecker instance = ConnectionChecker._();
 
-  static const _dnsServers = ['8.8.8.8', '1.1.1.1'];
-  static const _pingCount = 4;
+  static const _lookupHosts = ['google.com', 'cloudflare.com', 'github.com'];
   static const cacheDuration = Duration(seconds: 30);
 
   ConnectionStatus? _cached;
@@ -27,24 +26,24 @@ class ConnectionChecker {
     var totalLatency = 0;
     var successfulPings = 0;
 
-    for (final server in _dnsServers) {
-      var serverOk = false;
-      for (var i = 0; i < _pingCount; i++) {
-        try {
-          final sw = Stopwatch()..start();
-          final result = await InternetAddress.lookup('google.com')
-              .timeout(const Duration(seconds: 3));
-          sw.stop();
-          if (result.isNotEmpty) {
-            successfulPings++;
-            totalLatency += sw.elapsedMilliseconds;
-            serverOk = true;
-          }
-        } catch (_) {
-          // Individual ping failure — continue
+    // Try to resolve each host with a short timeout.
+    // If any resolves, we have internet.
+    for (final host in _lookupHosts) {
+      try {
+        final sw = Stopwatch()..start();
+        final result = await InternetAddress.lookup(host)
+            .timeout(const Duration(seconds: 3));
+        sw.stop();
+        if (result.isNotEmpty && result.any((a) => a.rawAddress.isNotEmpty)) {
+          successfulPings++;
+          totalLatency += sw.elapsedMilliseconds;
+          results[host] = true;
+        } else {
+          results[host] = false;
         }
+      } catch (_) {
+        results[host] = false;
       }
-      results[server] = serverOk;
     }
 
     final hasInternet = results.values.any((v) => v);
@@ -58,7 +57,10 @@ class ConnectionChecker {
     );
     _cachedAt = DateTime.now();
 
-    AppLogger.log.i('ConnectionCheck: internet=$hasInternet latency=${avgLatency}ms');
+    AppLogger.log.i(
+      'ConnectionCheck: internet=$hasInternet latency=${avgLatency}ms '
+      'results=${results.entries.where((e) => e.value).map((e) => e.key).join(',')}',
+    );
     return _cached!;
   }
 

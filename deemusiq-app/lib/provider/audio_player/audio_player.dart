@@ -13,6 +13,7 @@ import 'package:deemusiq/provider/database/database.dart';
 import 'package:deemusiq/provider/discord_provider.dart';
 import 'package:deemusiq/provider/server/sourced_track_provider.dart';
 import 'package:deemusiq/services/audio_player/audio_player.dart';
+import 'package:deemusiq/services/audio_player/audio_error_handler.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
@@ -36,57 +37,63 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   }
 
   Future<void> _syncSavedState() async {
-    final database = ref.read(databaseProvider);
+    try {
+      final database = ref.read(databaseProvider);
 
-    var playerState =
-        await database.select(database.audioPlayerStateTable).getSingleOrNull();
+      var playerState =
+          await database.select(database.audioPlayerStateTable).getSingleOrNull();
 
-    if (playerState == null) {
-      await database.into(database.audioPlayerStateTable).insert(
-            AudioPlayerStateTableCompanion.insert(
-              playing: audioPlayer.isPlaying,
-              loopMode: audioPlayer.loopMode,
-              shuffled: audioPlayer.isShuffled,
-              collections: <String>[],
-              tracks: const Value(<DeeMusiqTrackObject>[]),
-              currentIndex: const Value(0),
-              id: const Value(0),
-            ),
-          );
+      if (playerState == null) {
+        await database.into(database.audioPlayerStateTable).insert(
+              AudioPlayerStateTableCompanion.insert(
+                playing: audioPlayer.isPlaying,
+                loopMode: audioPlayer.loopMode,
+                shuffled: audioPlayer.isShuffled,
+                collections: <String>[],
+                tracks: const Value(<DeeMusiqTrackObject>[]),
+                currentIndex: const Value(0),
+                id: const Value(0),
+              ),
+            );
 
-      playerState =
-          await database.select(database.audioPlayerStateTable).getSingle();
-    } else {
-      await audioPlayer.setLoopMode(playerState.loopMode);
-      await audioPlayer.setShuffle(playerState.shuffled);
-    }
+        playerState =
+            await database.select(database.audioPlayerStateTable).getSingle();
+      } else {
+        await audioPlayer.setLoopMode(playerState.loopMode);
+        await audioPlayer.setShuffle(playerState.shuffled);
+      }
 
-    final tracks = playerState.tracks;
-    final currentIndex = playerState.currentIndex;
+      final tracks = playerState.tracks;
+      final currentIndex = playerState.currentIndex;
 
-    if (tracks.isEmpty && state.tracks.isNotEmpty) {
-      await _updatePlayerState(
-        AudioPlayerStateTableCompanion(
-          tracks: Value(state.tracks),
-          currentIndex: Value(currentIndex),
-        ),
-      );
-    } else if (tracks.isNotEmpty) {
-      state = state.copyWith(
-        tracks: tracks,
-        currentIndex: currentIndex,
-      );
-      await audioPlayer.openPlaylist(
-        tracks.asMediaList(),
-        initialIndex: currentIndex,
-        autoPlay: false,
-      );
-    }
+      if (tracks.isEmpty && state.tracks.isNotEmpty) {
+        await _updatePlayerState(
+          AudioPlayerStateTableCompanion(
+            tracks: Value(state.tracks),
+            currentIndex: Value(currentIndex),
+          ),
+        );
+      } else if (tracks.isNotEmpty) {
+        state = state.copyWith(
+          tracks: tracks,
+          currentIndex: currentIndex,
+        );
+        await audioPlayer.openPlaylist(
+          tracks.asMediaList(),
+          initialIndex: currentIndex,
+          autoPlay: false,
+        );
+      }
 
-    if (playerState.collections.isNotEmpty) {
-      state = state.copyWith(
-        collections: playerState.collections,
-      );
+      if (playerState.collections.isNotEmpty) {
+        state = state.copyWith(
+          collections: playerState.collections,
+        );
+      }
+    } catch (e, stack) {
+      AppLogger.log.e('Failed to sync saved player state: $e');
+      AppLogger.reportError(e, stack, '_syncSavedState');
+      // Don't crash — just start fresh
     }
   }
 
@@ -105,7 +112,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     final subscriptions = [
       audioPlayer.playingStream.listen((playing) async {
         try {
-          state = state.copyWith(playing: playing);
+          state = state.copyWith(playing: playing, errorMessage: null);
 
           await _updatePlayerState(
             AudioPlayerStateTableCompanion(
@@ -161,6 +168,16 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         } catch (e, stack) {
           AppLogger.reportError(e, stack);
         }
+      }),
+      audioPlayer.userMessageStream.listen((message) {
+        // Surface error messages in the state so the UI can show them
+        state = state.copyWith(errorMessage: message);
+        // Auto-clear after 5 seconds
+        Future.delayed(const Duration(seconds: 5), () {
+          if (state.errorMessage == message) {
+            state = state.copyWith(errorMessage: null);
+          }
+        });
       }),
     ];
 
@@ -383,11 +400,24 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       collections: [],
     );
 
-    await audioPlayer.openPlaylist(
-      medias,
-      initialIndex: initialIndex,
-      autoPlay: autoPlay,
-    );
+    try {
+      await audioPlayer.openPlaylist(
+        medias,
+        initialIndex: initialIndex,
+        autoPlay: autoPlay,
+      );
+    } catch (e, stack) {
+      AppLogger.log.e('Failed to open playlist: $e');
+      AppLogger.reportError(e, stack, 'load() openPlaylist');
+      AudioErrorHandler.instance.handleError(
+        e,
+        stack,
+        context: 'load() — ${tracks.length} tracks',
+        canSkipTrack: medias.length > 1,
+        maxRetries: 2,
+      );
+      // Still sync the state so the UI shows the attempted tracks
+    }
 
     await _updatePlayerState(
       AudioPlayerStateTableCompanion(
@@ -403,30 +433,41 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     }
 
     final oldState = state;
-    await audioPlayer.stop();
+    try {
+      await audioPlayer.stop();
+    } catch (e, stack) {
+      AppLogger.reportError(e, stack, 'swapActiveSource stop');
+    }
 
-    await load(
-      oldState.tracks,
-      initialIndex: oldState.currentIndex,
-      autoPlay: true,
-    );
-    state = state.copyWith(
-      collections: oldState.collections,
-      loopMode: oldState.loopMode,
-      playing: oldState.playing,
-      shuffled: false,
-    );
-    await audioPlayer.setLoopMode(oldState.loopMode);
-    await _updatePlayerState(
-      AudioPlayerStateTableCompanion(
-        tracks: Value(state.tracks),
-        currentIndex: Value(state.currentIndex),
-        collections: Value(state.collections),
-        loopMode: Value(state.loopMode),
-        playing: Value(state.playing),
-        shuffled: Value(state.shuffled),
-      ),
-    );
+    try {
+      await load(
+        oldState.tracks,
+        initialIndex: oldState.currentIndex,
+        autoPlay: true,
+      );
+      state = state.copyWith(
+        collections: oldState.collections,
+        loopMode: oldState.loopMode,
+        playing: oldState.playing,
+        shuffled: false,
+      );
+      await audioPlayer.setLoopMode(oldState.loopMode);
+      await _updatePlayerState(
+        AudioPlayerStateTableCompanion(
+          tracks: Value(state.tracks),
+          currentIndex: Value(state.currentIndex),
+          collections: Value(state.collections),
+          loopMode: Value(state.loopMode),
+          playing: Value(state.playing),
+          shuffled: Value(state.shuffled),
+        ),
+      );
+    } catch (e, stack) {
+      AppLogger.log.e('swapActiveSource failed: $e');
+      AppLogger.reportError(e, stack, 'swapActiveSource');
+      // Try to restore the previous state best-effort
+      state = oldState;
+    }
   }
 
   Future<void> jumpToTrack(DeeMusiqTrackObject track) async {

@@ -104,7 +104,8 @@ class AudioEqualizer {
     try {
       _nativePlayer.setProperty('af', filter);
     } catch (e) {
-      AppLogger.reportError('Equalizer apply failed: $filter', StackTrace.current);
+      AppLogger.log.w('Equalizer apply failed: $filter — ${e.toString()}');
+      AppLogger.reportError(e, StackTrace.current, 'Equalizer apply failed: $filter');
     }
   }
 
@@ -121,7 +122,7 @@ class AudioEqualizer {
   /// Each list contains 10 gain values in dB for bands:
   ///   31 Hz, 63 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, 2 kHz, 4 kHz, 8 kHz, 16 kHz
   static const _presets = <String, List<double>>{
-    'Flat':        [ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+    'Flat':        [ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -7.2, -7.2, -7.2, -9.6],
     'Classical':   [ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -7.2, -7.2, -7.2, -9.6],
     'Club':        [ 0.0,  0.0,  8.0,  5.6,  5.6,  5.6,  3.2,  0.0,  0.0,  0.0],
     'Dance':       [ 9.6,  7.2,  2.4,  0.0,  0.0, -5.6, -7.2, -7.2,  0.0,  0.0],

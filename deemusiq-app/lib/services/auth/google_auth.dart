@@ -6,6 +6,7 @@ import 'package:deemusiq/services/wallet/payment_service.dart'
 import 'package:deemusiq/services/wallet/device_identity.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
 import 'package:deemusiq/services/integrity/integrity_service.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 import 'dart:convert';
 
 /// Google OAuth sign-in flow for DeeMusiq.
@@ -50,6 +51,7 @@ class GoogleAuthService {
     try {
       return await _client.isSignedIn();
     } catch (_) {
+      AppLogger.log.d('Google isSignedIn check failed (likely no network or Google Play Services)');
       return false;
     }
   }
@@ -84,7 +86,9 @@ class GoogleAuthService {
     // Sign out first to force account selection.
     try {
       await _client.signOut();
-    } catch (_) {}
+    } catch (e, stack) {
+      AppLogger.log.w('Google sign-out during signIn flow failed: ${e.toString()}');
+    }
 
     // Trigger the Google Sign-In dialog.
     final GoogleSignInAccount? googleUser;
@@ -127,7 +131,9 @@ class GoogleAuthService {
   Future<void> signOut() async {
     try {
       await _client.signOut();
-    } catch (_) {}
+    } catch (e, stack) {
+      AppLogger.log.w('Google sign-out failed: ${e.toString()}');
+    }
     WalletApiClient.instance.logout();
   }
 
@@ -135,7 +141,9 @@ class GoogleAuthService {
   Future<void> disconnect() async {
     try {
       await _client.disconnect();
-    } catch (_) {}
+    } catch (e, stack) {
+      AppLogger.log.w('Google disconnect failed: ${e.toString()}');
+    }
     WalletApiClient.instance.logout();
   }
 }

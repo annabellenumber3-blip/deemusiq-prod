@@ -86,7 +86,7 @@ mixin DeeMusiqAudioPlayersStreams on AudioPlayerInterface {
 
   Stream<bool> get bufferingStream {
     // if (mkSupportedPlatform) {
-    return Stream.value(false);
+    return _mkPlayer.stream.buffering;
     // } else {
     //   return _justAudio!.playerStateStream
     //       .map(
@@ -143,6 +143,8 @@ mixin DeeMusiqAudioPlayersStreams on AudioPlayerInterface {
       _mkPlayer.stream.audioDevice.asBroadcastStream();
 
   Stream<String> get errorStream => _mkPlayer.stream.error;
+
+  Stream<String> get userMessageStream => _mkPlayer.userMessageStream;
 
   Stream<mk.Playlist> get playlistStream => _mkPlayer.stream.playlist;
 }

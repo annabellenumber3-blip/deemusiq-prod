@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:media_kit/media_kit.dart' as mk;
 
 import 'package:deemusiq/services/audio_player/playback_state.dart';
+import 'package:deemusiq/services/audio_player/audio_error_handler.dart';
 import 'package:deemusiq/utils/platform.dart';
 
 part 'audio_players_streams_mixin.dart';
@@ -56,7 +57,31 @@ abstract class AudioPlayerInterface {
     _mkPlayer.stream.error.listen((event) {
       AppLogger.log.e('AudioPlayer error: $event');
       AppLogger.reportError(event, StackTrace.current, 'AudioPlayer error');
+      AudioErrorHandler.instance.handleError(
+        event is Exception ? event : Exception(event.toString()),
+        StackTrace.current,
+        context: 'AudioPlayer stream',
+        canSkipTrack: true,
+      );
     });
+
+    // Wire up the error handler's retry/skip callbacks to this player
+    AudioErrorHandler.instance.onSkipRequested = () {
+      try {
+        _mkPlayer.next();
+      } catch (e, stack) {
+        AppLogger.reportError(e, stack, 'Skip on error failed');
+      }
+    };
+    AudioErrorHandler.instance.onRetryPlayback = () async {
+      try {
+        await _mkPlayer.play();
+        return true;
+      } catch (e, stack) {
+        AppLogger.reportError(e, stack, 'Retry playback failed');
+        return false;
+      }
+    };
   }
 
   /// Whether the current platform supports the audioplayers plugin

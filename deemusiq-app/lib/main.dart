@@ -117,7 +117,10 @@ Future<void> main(List<String> rawArgs) async {
             KVStoreService.getYoutubeEnginePath(YoutubeClientEngine.ytDlp) ??
                 "yt-dlp${kIsWindows ? '.exe' : ''}",
           )
-          .catchError((e, stack) => null);
+          .catchError((e, stack) {
+            AppLogger.log.w('YtDlp binary location failed: ${e.toString()}');
+            AppLogger.reportError(e, stack, 'YtDlp setBinaryLocation');
+          });
       await FlutterDiscordRPC.initialize(Env.discordAppId);
     }
 

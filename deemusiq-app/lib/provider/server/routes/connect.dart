@@ -47,6 +47,28 @@ class ServerConnectRoutes {
       _connectClientStreamController.stream;
 
   final List<String> _allowedConnections = [];
+  static const _maxAllowedConnections = 50;
+  final Map<String, DateTime> _connectionTimestamps = {};
+
+  void _pruneStaleConnections() {
+    final now = DateTime.now();
+    const maxAge = Duration(hours: 24);
+    _connectionTimestamps.removeWhere((_, ts) => now.difference(ts) > maxAge);
+    _allowedConnections.removeWhere((o) => !_connectionTimestamps.containsKey(o));
+  }
+
+  void _addAllowedConnection(String origin) {
+    _pruneStaleConnections();
+    if (_allowedConnections.length >= _maxAllowedConnections) {
+      final oldest = _connectionTimestamps.entries.reduce(
+        (a, b) => a.value.isBefore(b.value) ? a : b,
+      );
+      _connectionTimestamps.remove(oldest.key);
+      _allowedConnections.remove(oldest.key);
+    }
+    _allowedConnections.add(origin);
+    _connectionTimestamps[origin] = DateTime.now();
+  }
 
   FutureOr<Response> websocket(Request req) {
     return webSocketHandler(
@@ -90,7 +112,7 @@ class ServerConnectRoutes {
               false;
 
           if (confirmed) {
-            _allowedConnections.add(origin);
+            _addAllowedConnection(origin);
           } else {
             channel.sink.addEvent(
               WebSocketErrorEvent("Connection denied"),
@@ -237,7 +259,19 @@ class ServerConnectRoutes {
               }
             },
             onDone: () {
+              // Cancel per-connection subscriptions when client disconnects
+              for (final sub in subscriptions) {
+                sub.cancel();
+              }
+              subscriptions.clear();
               AppLogger.log.i('Connection closed');
+            },
+            onError: (error) {
+              AppLogger.log.w('WebSocket error: $error');
+              for (final sub in subscriptions) {
+                sub.cancel();
+              }
+              subscriptions.clear();
             },
           ),
         ]);

@@ -118,42 +118,59 @@ class NewPipeEngine implements YouTubeEngine {
 
   @override
   Future<Video> getVideo(String videoId) async {
-    final video = await NewPipeExtractor.getVideoInfo(videoId);
-
-    return _parseVideo(video);
+    try {
+      final video = await NewPipeExtractor.getVideoInfo(videoId);
+      return _parseVideo(video);
+    } catch (e, stack) {
+      AppLogger.log.w('NewPipeEngine: failed to get video for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override
   Future<(Video, StreamManifest)> getVideoWithStreamInfo(String videoId) async {
-    final video = await NewPipeExtractor.getVideoInfo(videoId);
+    try {
+      final video = await NewPipeExtractor.getVideoInfo(videoId);
 
-    final streams =
-        video.audioStreams.map((stream) => _parseAudioStream(stream, videoId));
+      final streams =
+          video.audioStreams.map((stream) => _parseAudioStream(stream, videoId));
 
-    if (streams.isEmpty) {
-      final videoStreams = video.videoStreams
-          .map((stream) => _parseVideoStream(stream, videoId));
-      if (videoStreams.isNotEmpty) {
-        return (_parseVideo(video), StreamManifest(videoStreams));
+      if (streams.isEmpty) {
+        final videoStreams = video.videoStreams
+            .map((stream) => _parseVideoStream(stream, videoId));
+        if (videoStreams.isNotEmpty) {
+          return (_parseVideo(video), StreamManifest(videoStreams));
+        }
       }
-    }
 
-    return (_parseVideo(video), StreamManifest(streams));
+      return (_parseVideo(video), StreamManifest(streams));
+    } catch (e, stack) {
+      AppLogger.log.w('NewPipeEngine: failed to get video+streams for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override
   Future<List<Video>> searchVideos(String query) async {
-    final results = await NewPipeExtractor.search(
-      query,
-      contentFilters: [SearchContentFilters.videos],
-    );
+    try {
+      final results = await NewPipeExtractor.search(
+        query,
+        contentFilters: [SearchContentFilters.videos],
+      );
 
-    final resultsWithVideos = results
-        .whereType<VideoSearchResultItem>()
-        .map((e) => _parseVideoResult(e))
-        .toList();
+      final resultsWithVideos = results
+          .whereType<VideoSearchResultItem>()
+          .map((e) => _parseVideoResult(e))
+          .toList();
 
-    return resultsWithVideos;
+      return resultsWithVideos;
+    } catch (e, stack) {
+      AppLogger.log.w('NewPipeEngine: search failed for "$query": ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override

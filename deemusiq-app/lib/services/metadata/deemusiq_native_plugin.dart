@@ -376,7 +376,60 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
 
 class _NativeAlbum extends MetadataPluginAlbumEndpoint {
   final _CatalogApi api;
+  YouTubeEngine? _ytEngine;
+  List<YouTubeEngine>? _allYtEngines;
+
   _NativeAlbum(this.api) : super();
+
+  /// Injected by [DeeMusiqNativeEndpoints] after construction so that the
+  /// album endpoint can fall back to YouTube when the backend is empty.
+  void injectYouTube(YouTubeEngine engine, List<YouTubeEngine> allEngines) {
+    _ytEngine = engine;
+    _allYtEngines = allEngines;
+  }
+
+  /// Converts a YouTube [Video] into a [DeeMusiqSimpleAlbumObject].
+  DeeMusiqSimpleAlbumObject _videoToSimpleAlbum(Video video) {
+    return DeeMusiqSimpleAlbumObject(
+      id: video.id.value,
+      name: video.title,
+      externalUri: "deemusiq:album:${video.id.value}",
+      artists: video.author.isNotEmpty
+          ? [
+              DeeMusiqSimpleArtistObject(
+                id: video.author,
+                name: video.author,
+                externalUri: "deemusiq:artist:${video.author}",
+              )
+            ]
+          : const [],
+      images: video.thumbnails.highResUrl.isNotEmpty
+          ? [DeeMusiqImageObject(url: video.thumbnails.highResUrl)]
+          : const [],
+      albumType: DeeMusiqAlbumType.single,
+    );
+  }
+
+  /// Searches YouTube for album-shaped results.
+  Future<List<DeeMusiqSimpleAlbumObject>> _youtubeAlbumSearch(
+      String query, int limit) async {
+    if (_allYtEngines == null || _allYtEngines!.isEmpty) return [];
+    try {
+      final videos = await EngineFailover.tryEngines(
+        engines: _allYtEngines!,
+        operation: (engine) async {
+          final results = await engine.searchVideos(query);
+          return results.take(limit).toList();
+        },
+      );
+      return videos.map(_videoToSimpleAlbum).toList();
+    } catch (e, stack) {
+      AppLogger.log.w(
+          'YouTube album releases search failed for "$query": ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return [];
+    }
+  }
 
   @override
   Future<DeeMusiqFullAlbumObject> getAlbum(String id) async {
@@ -429,16 +482,34 @@ class _NativeAlbum extends MetadataPluginAlbumEndpoint {
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqSimpleAlbumObject>> releases(
       {int? offset, int? limit}) async {
-    if (!api.isConfigured) return _page(const []);
-    final d = await api.home();
-    if (d == null) return _page(const []);
-    final albums = <DeeMusiqSimpleAlbumObject>[];
-    for (final s in _list(d["sections"])) {
-      if (s["type"] == "albums") {
-        albums.addAll(_list(s["items"]).map(_simpleAlbum));
+    // 1) Try the real backend first.
+    if (api.isConfigured) {
+      final d = await api.home();
+      if (d != null) {
+        final albums = <DeeMusiqSimpleAlbumObject>[];
+        for (final s in _list(d["sections"])) {
+          if (s["type"] == "albums") {
+            albums.addAll(_list(s["items"]).map(_simpleAlbum));
+          }
+        }
+        if (albums.isNotEmpty) return _page(albums);
       }
     }
-    return _page(albums);
+
+    // 2) YouTube fallback with popular SA music queries.
+    const fallbackQueries = [
+      "Amapiano 2026",
+      "South African House 2026",
+      "Afrobeat 2026",
+      "Gqom 2026",
+    ];
+
+    final allAlbums = <DeeMusiqSimpleAlbumObject>[];
+    for (final q in fallbackQueries) {
+      final albums = await _youtubeAlbumSearch(q, 5);
+      allAlbums.addAll(albums);
+    }
+    return _page(allAlbums);
   }
 
   @override
@@ -624,43 +695,125 @@ class _NativeTrack extends MetadataPluginTrackEndpoint {
 
 class _NativeBrowse extends MetadataPluginBrowseEndpoint {
   final _CatalogApi api;
+  YouTubeEngine? _ytEngine;
+  List<YouTubeEngine>? _allYtEngines;
+
   _NativeBrowse(this.api) : super();
+
+  /// Injected by [DeeMusiqNativeEndpoints] after construction so that
+  /// the browse endpoint can fall back to YouTube when the backend is empty.
+  void injectYouTube(YouTubeEngine engine, List<YouTubeEngine> allEngines) {
+    _ytEngine = engine;
+    _allYtEngines = allEngines;
+  }
+
+  /// Converts a YouTube [Video] into a [DeeMusiqSimpleAlbumObject] suitable
+  /// for displaying inside a [HorizontalPlaybuttonCardView].
+  DeeMusiqSimpleAlbumObject _videoToSimpleAlbum(Video video) {
+    return DeeMusiqSimpleAlbumObject(
+      id: video.id.value,
+      name: video.title,
+      externalUri: "deemusiq:album:${video.id.value}",
+      artists: video.author.isNotEmpty
+          ? [
+              DeeMusiqSimpleArtistObject(
+                id: video.author,
+                name: video.author,
+                externalUri: "deemusiq:artist:${video.author}",
+              )
+            ]
+          : const [],
+      images: video.thumbnails.highResUrl.isNotEmpty
+          ? [DeeMusiqImageObject(url: video.thumbnails.highResUrl)]
+          : const [],
+      albumType: DeeMusiqAlbumType.single,
+    );
+  }
+
+  /// Searches YouTube and returns album-shaped results for browse sections.
+  Future<List<DeeMusiqSimpleAlbumObject>> _youtubeAlbumSearch(
+      String query, int limit) async {
+    if (_allYtEngines == null || _allYtEngines!.isEmpty) return [];
+    try {
+      final videos = await EngineFailover.tryEngines(
+        engines: _allYtEngines!,
+        operation: (engine) async {
+          final results = await engine.searchVideos(query);
+          return results.take(limit).toList();
+        },
+      );
+      return videos.map(_videoToSimpleAlbum).toList();
+    } catch (e, stack) {
+      AppLogger.log.w(
+          'YouTube browse album search failed for "$query": ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return [];
+    }
+  }
 
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqBrowseSectionObject<Object>>>
       sections({int? offset, int? limit}) async {
-    if (!api.isConfigured) return _page(const []);
-    final d = await api.home();
-    if (d == null) return _page(const []);
-    final sections = <DeeMusiqBrowseSectionObject<Object>>[];
-    for (final s in _list(d["sections"])) {
-      final type = s["type"];
-      final items = _list(s["items"]);
-      final List<Object> mapped;
-      switch (type) {
-        case "tracks":
-          mapped = items.map(_track).toList();
-          break;
-        case "albums":
-          mapped = items.map(_simpleAlbum).toList();
-          break;
-        case "artists":
-          mapped = items.map(_fullArtist).toList();
-          break;
-        case "playlists":
-          mapped = items.map(_simplePlaylist).toList();
-          break;
-        default:
-          mapped = const [];
+    // 1) Try the real backend first.
+    if (api.isConfigured) {
+      final d = await api.home();
+      if (d != null) {
+        final sections = <DeeMusiqBrowseSectionObject<Object>>[];
+        for (final s in _list(d["sections"])) {
+          final type = s["type"];
+          final items = _list(s["items"]);
+          final List<Object> mapped;
+          switch (type) {
+            case "tracks":
+              mapped = items.map(_track).toList();
+              break;
+            case "albums":
+              mapped = items.map(_simpleAlbum).toList();
+              break;
+            case "artists":
+              mapped = items.map(_fullArtist).toList();
+              break;
+            case "playlists":
+              mapped = items.map(_simplePlaylist).toList();
+              break;
+            default:
+              mapped = const [];
+          }
+          sections.add(DeeMusiqBrowseSectionObject<Object>(
+            id: (s["id"] ?? "").toString(),
+            title: (s["title"] ?? "").toString(),
+            externalUri: "deemusiq:section:${s["id"] ?? ""}",
+            browseMore: false,
+            items: mapped,
+          ));
+        }
+        if (sections.isNotEmpty) return _page(sections);
       }
-      sections.add(DeeMusiqBrowseSectionObject<Object>(
-        id: (s["id"] ?? "").toString(),
-        title: (s["title"] ?? "").toString(),
-        externalUri: "deemusiq:section:${s["id"] ?? ""}",
-        browseMore: false,
-        items: mapped,
-      ));
     }
+
+    // 2) Backend unavailable / empty → YouTube fallback with popular SA queries.
+    const fallbackQueries = <String, String>{
+      "Amapiano 2026": "Amapiano 2026",
+      "South African House 2026": "South African House 2026",
+      "Afrobeat 2026": "Afrobeat 2026",
+      "Gqom 2026": "Gqom 2026",
+    };
+
+    final sections = <DeeMusiqBrowseSectionObject<Object>>[];
+    for (final entry in fallbackQueries.entries) {
+      final albums = await _youtubeAlbumSearch(entry.value, 10);
+      if (albums.isNotEmpty) {
+        sections.add(DeeMusiqBrowseSectionObject<Object>(
+          id: entry.key.replaceAll(" ", "_").toLowerCase(),
+          title: entry.key,
+          externalUri:
+              "deemusiq:section:${entry.key.replaceAll(" ", "_").toLowerCase()}",
+          browseMore: false,
+          items: albums,
+        ));
+      }
+    }
+
     return _page(sections);
   }
 
@@ -883,9 +1036,9 @@ class DeeMusiqNativeEndpoints {
   final _CatalogApi _api = _CatalogApi();
   late final MetadataAuthEndpoint auth = _NativeAuth();
   late final MetadataPluginAudioSourceEndpoint audioSource;
-  late final MetadataPluginAlbumEndpoint album = _NativeAlbum(_api);
+  late final MetadataPluginAlbumEndpoint album;
   late final MetadataPluginArtistEndpoint artist = _NativeArtist(_api);
-  late final MetadataPluginBrowseEndpoint browse = _NativeBrowse(_api);
+  late final MetadataPluginBrowseEndpoint browse;
   late final MetadataPluginSearchEndpoint search;
   late final MetadataPluginPlaylistEndpoint playlist = _NativePlaylist(_api);
   late final MetadataPluginTrackEndpoint track = _NativeTrack(_api);
@@ -895,5 +1048,13 @@ class DeeMusiqNativeEndpoints {
   DeeMusiqNativeEndpoints(YouTubeEngine youtubeEngine, List<YouTubeEngine> allEngines) {
     audioSource = _NativeAudioSource(youtubeEngine, allEngines);
     search = _NativeSearch(_api, youtubeEngine, allEngines);
+
+    final a = _NativeAlbum(_api);
+    a.injectYouTube(youtubeEngine, allEngines);
+    album = a;
+
+    final b = _NativeBrowse(_api);
+    b.injectYouTube(youtubeEngine, allEngines);
+    browse = b;
   }
 }

@@ -14,6 +14,7 @@ import 'package:deemusiq/provider/skip_segments/skip_segments.dart';
 import 'package:deemusiq/provider/scrobbler/scrobbler.dart';
 import 'package:deemusiq/provider/user_preferences/user_preferences_provider.dart';
 import 'package:deemusiq/services/audio_player/audio_player.dart';
+import 'package:deemusiq/services/audio_player/audio_error_handler.dart';
 import 'package:deemusiq/services/audio_services/audio_services.dart';
 import 'package:deemusiq/services/logger/logger.dart';
 
@@ -38,6 +39,7 @@ class AudioPlayerStreamListeners {
       subscribeToPlaylist(),
       positionSub,
       subscribeToPlayerError(),
+      subscribeToUserMessages(),
     ];
 
     ref.onDispose(() {
@@ -171,6 +173,23 @@ class AudioPlayerStreamListeners {
     return audioPlayer.errorStream.listen((event) {
       AppLogger.log.e('MediaKit player error: $event');
       AppLogger.reportError(event, StackTrace.current, 'MediaKit player error');
+      AudioErrorHandler.instance.handleError(
+        event is Exception ? event : Exception(event.toString()),
+        StackTrace.current,
+        context: 'MediaKit stream',
+        canSkipTrack: true,
+      );
+    });
+  }
+
+  /// Subscribes to user-facing messages from the audio pipeline.
+  /// These are routed to the AudioErrorHandler for UI display (toasts, etc.).
+  StreamSubscription subscribeToUserMessages() {
+    return audioPlayer.userMessageStream.listen((message) {
+      AppLogger.log.i('[UserMessage] $message');
+      // The message is already routed through the error handler's onUserMessage
+      // callback by the CustomPlayer. This stream provides an additional hook
+      // for any provider-level side effects.
     });
   }
 }

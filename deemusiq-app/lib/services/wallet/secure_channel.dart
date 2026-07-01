@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:encrypt/encrypt.dart' as enc;
+import 'package:deemusiq/services/logger/logger.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
 
@@ -28,6 +29,7 @@ abstract class SecureChannel {
     try {
       return base64.decode(k).length == 32;
     } catch (_) {
+      AppLogger.log.d('SecureChannel: invalid key format (not base64 or wrong length)');
       return false;
     }
   }

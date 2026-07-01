@@ -60,7 +60,7 @@ class EngineFailover {
       for (var attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           final result = await operation(engine).timeout(
-            const Duration(seconds: 30),
+            Duration(seconds: 15 + (attempt * 5)), // Progressive timeout
           );
           AppLogger.log.i(
             'EngineFailover: success on ${engine.runtimeType} attempt $attempt',
@@ -74,12 +74,35 @@ class EngineFailover {
           onRetry?.call(msg, attempt);
 
           if (attempt < maxRetries) {
-            // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-            await Future.delayed(_backoffBase * (1 << (attempt - 1)));
+            // Exponential backoff: 1s, 2s, 4s, 8s, 16s — but clamp at 16s
+            final backoff = _backoffBase * (1 << (attempt - 1));
+            await Future.delayed(
+              backoff > const Duration(seconds: 16)
+                  ? const Duration(seconds: 16)
+                  : backoff,
+            );
           } else {
             errors.add('${engine.runtimeType}: ${_shortError(e)}');
           }
         }
+      }
+    }
+
+    // Re-check internet before giving up — maybe it came back
+    // and a retry with the first engine would succeed
+    final reconnect = await ConnectionChecker.instance.check();
+    if (reconnect.hasInternet && errors.isNotEmpty) {
+      AppLogger.log.w(
+        'EngineFailover: re-checking internet — it came back, trying first engine once more',
+      );
+      try {
+        final result = await operation(engines.first).timeout(
+          const Duration(seconds: 30),
+        );
+        AppLogger.log.i('EngineFailover: success on reconnect retry');
+        return result;
+      } catch (_) {
+        errors.add('reconnect-retry: ${_shortError(_)}');
       }
     }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:deemusiq/services/kv_store/kv_store.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
 import 'package:deemusiq/services/integrity/integrity_service.dart';
@@ -84,8 +85,8 @@ class WalletApiClient {
               resp.data = jsonDecode(
                 SecureChannel.open(Map<String, dynamic>.from(resp.data as Map)),
               );
-            } catch (_) {
-              // Undecryptable envelope — fall through to the generic message.
+            } catch (e) {
+              AppLogger.log.w('Failed to decrypt secure error envelope — using generic message');
             }
           }
           // A cached JWT that expired/was revoked → 401. Drop it so the next
@@ -119,6 +120,7 @@ class WalletApiClient {
       );
       return res.statusCode == 200;
     } catch (_) {
+      AppLogger.log.d('Backend ping failed (unreachable or backend down)');
       return false;
     }
   }
