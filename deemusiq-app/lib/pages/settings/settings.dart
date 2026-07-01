@@ -29,7 +29,6 @@ class SettingsPage extends HookConsumerWidget {
     final preferencesNotifier = ref.watch(userPreferencesProvider.notifier);
 
     return SafeArea(
-      bottom: false,
       child: Scaffold(
         headers: [
           TitleBar(
