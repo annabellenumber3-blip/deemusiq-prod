@@ -57,14 +57,40 @@ class ServerPlaybackRoutes {
     Request request,
     String trackId,
   ) async {
+    AppLogger.log.i(
+      '[PlaybackServer] _getSourcedTrack: trackId=$trackId, requestedUri=${request.requestedUri}',
+    );
     final track =
         playlist.tracks.firstWhere((element) => element.id == trackId);
 
     final activeSourcedTrack =
         await ref.read(activeTrackSourcesProvider.future);
 
-    final media = audioPlayer.playlist.medias
-        .firstWhere((e) => e.uri == request.requestedUri.toString());
+    // Find the media by matching the trackId from the URI instead of exact URI
+    // matching (ports may differ between media creation time and request time).
+    final medias = audioPlayer.playlist.medias;
+    final media = medias.firstWhere(
+      (e) {
+        if (e.uri == request.requestedUri.toString()) return true;
+        // Fallback: match by extracting trackId from URI path
+        try {
+          final mediaUri = Uri.parse(e.uri);
+          final reqUri = request.requestedUri;
+          return mediaUri.pathSegments.isNotEmpty &&
+              reqUri.pathSegments.isNotEmpty &&
+              mediaUri.pathSegments.last == reqUri.pathSegments.last;
+        } catch (_) {
+          return false;
+        }
+      },
+      orElse: () => medias.firstWhere(
+        (e) => e.uri.contains('/stream/$trackId'),
+        orElse: () => medias.first,
+      ),
+    );
+    AppLogger.log.i(
+      '[PlaybackServer] Found media URI: ${media.uri}',
+    );
     final spotubeMedia =
         media is DeeMusiqMedia ? media : DeeMusiqMedia.media(media);
     final sourcedTrack = activeSourcedTrack?.track.id == track.id
@@ -74,6 +100,10 @@ class ServerPlaybackRoutes {
                 .future,
           );
 
+    AppLogger.log.i(
+      '[PlaybackServer] Resolved sourcedTrack for "${track.name}": '
+      'url=${sourcedTrack?.url ?? "null"}',
+    );
     return sourcedTrack;
   }
 
@@ -277,9 +307,11 @@ class ServerPlaybackRoutes {
   /// @head('/stream/<trackId>')
   Future<Response> headStreamTrackId(Request request, String trackId) async {
     try {
+      AppLogger.log.i('[PlaybackServer] HEAD /stream/$trackId');
       final sourcedTrack = await _getSourcedTrack(request, trackId);
 
       if (sourcedTrack == null) {
+        AppLogger.log.w('[PlaybackServer] HEAD /stream/$trackId: track not found');
         return Response.notFound("Track not found in the current queue");
       }
 
@@ -288,11 +320,15 @@ class ServerPlaybackRoutes {
         sourcedTrack,
       );
 
+      AppLogger.log.i(
+        '[PlaybackServer] HEAD /stream/$trackId → ${res.statusCode}',
+      );
       return Response(
         res.statusCode!,
         headers: res.headers.map,
       );
     } catch (e, stack) {
+      AppLogger.log.e('[PlaybackServer] HEAD /stream/$trackId error: $e');
       AppLogger.reportError(e, stack);
       return Response.internalServerError();
     }
@@ -301,12 +337,17 @@ class ServerPlaybackRoutes {
   /// @get('/stream/<trackId>')
   Future<Response> getStreamTrackId(Request request, String trackId) async {
     try {
+      AppLogger.log.i('[PlaybackServer] GET /stream/$trackId');
       final sourcedTrack = await _getSourcedTrack(request, trackId);
 
       if (sourcedTrack == null) {
+        AppLogger.log.w('[PlaybackServer] GET /stream/$trackId: track not found');
         return Response.notFound("Track not found in the current queue");
       }
 
+      AppLogger.log.i(
+        '[PlaybackServer] GET /stream/$trackId → streaming from ${sourcedTrack.url}',
+      );
       final res = await streamTrack(
         request,
         sourcedTrack,
@@ -327,6 +368,7 @@ class ServerPlaybackRoutes {
         headers: res.headers.map,
       );
     } catch (e, stack) {
+      AppLogger.log.e('[PlaybackServer] GET /stream/$trackId error: $e');
       AppLogger.reportError(e, stack);
       return Response.internalServerError();
     }

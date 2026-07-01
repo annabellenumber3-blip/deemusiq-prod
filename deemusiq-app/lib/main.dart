@@ -84,6 +84,13 @@ Future<void> main(List<String> rawArgs) async {
 
     MediaKit.ensureInitialized();
 
+    // Ensure the streaming server port is initialized early so that
+    // DeeMusiqMedia objects never get created with port 0.
+    if (DeeMusiqMedia.serverPort == 0) {
+      DeeMusiqMedia.serverPort = 57342; // Default fallback port
+      AppLogger.log.i('Pre-initialized DeeMusiqMedia.serverPort to 57342');
+    }
+
     await migrateMacOsFromSandboxToNoSandbox();
 
     // force High Refresh Rate on some Android devices (like One Plus)
@@ -171,10 +178,12 @@ class DeeMusiq extends HookConsumerWidget {
     final router = useMemoized(() => AppRouter(ref), []);
     final hasTouchSupport = useHasTouch();
 
+    // IMPORTANT: serverProvider must be listened BEFORE audioPlayerStreamListenersProvider
+    // so that DeeMusiqMedia.serverPort is set before any media objects are created.
+    ref.listen(serverProvider, (_, __) {});
     ref.listen(audioPlayerStreamListenersProvider, (_, __) {});
     ref.listen(bonsoirProvider, (_, __) {});
     ref.listen(connectClientsProvider, (_, __) {});
-    ref.listen(serverProvider, (_, __) {});
     ref.listen(trayManagerProvider, (_, __) {});
     ref.listen(metadataPluginsProvider, (_, __) {});
     ref.listen(metadataPluginProvider, (_, __) {});

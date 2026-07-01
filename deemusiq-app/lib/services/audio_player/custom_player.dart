@@ -21,9 +21,11 @@ class CustomPlayer extends Player {
 
   CustomPlayer({super.configuration})
       : _playerStateStream = StreamController.broadcast() {
+    AppLogger.log.i('[CustomPlayer] Initializing mpv player...');
     nativePlayer.setProperty('network-timeout', '120');
     // Audio-only playback: disable video decoding entirely
     nativePlayer.setProperty('vid', 'no');
+    AppLogger.log.i('[CustomPlayer] mpv player initialized successfully');
 
     _subscriptions = [
       stream.buffering.listen((event) {

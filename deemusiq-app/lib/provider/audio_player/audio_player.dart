@@ -356,6 +356,9 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     bool autoPlay = false,
   }) async {
     _assertAllowedTracks(tracks);
+    AppLogger.log.i(
+      '[AudioPlayer.load] Loading ${tracks.length} tracks, initialIndex=$initialIndex, autoPlay=$autoPlay',
+    );
 
     final medias = _blacklist
         .filter(tracks)
@@ -363,10 +366,23 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         .asMediaList()
         .unique((a, b) => a.uri == b.uri);
 
+    AppLogger.log.i(
+      '[AudioPlayer.load] Created ${medias.length} media objects (after dedup)',
+    );
+    // Log the URIs for debugging
+    for (var i = 0; i < medias.length; i++) {
+      AppLogger.log.i(
+        '[AudioPlayer.load]   Media[$i]: "${medias[i].track.name}" → ${medias[i].uri}',
+      );
+    }
+
     // Giving the initial track a boost so MediaKit won't skip
     // because of timeout
     final intendedActiveTrack = medias.elementAt(initialIndex);
     if (intendedActiveTrack.track is! DeeMusiqLocalTrackObject) {
+      AppLogger.log.i(
+        '[AudioPlayer.load] Pre-fetching sourced track for "${intendedActiveTrack.track.name}"',
+      );
       ref.read(
         sourcedTrackProvider(
           intendedActiveTrack.track as DeeMusiqFullTrackObject,
@@ -374,7 +390,10 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       );
     }
 
-    if (medias.isEmpty) return;
+    if (medias.isEmpty) {
+      AppLogger.log.w('[AudioPlayer.load] No media to play');
+      return;
+    }
 
     state = state.copyWith(
       // These are filtered tracks as well
@@ -383,6 +402,10 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       collections: [],
     );
 
+    AppLogger.log.i(
+      '[AudioPlayer.load] Opening playlist with ${medias.length} tracks, '
+      'serverPort=${DeeMusiqMedia.serverPort}',
+    );
     await audioPlayer.openPlaylist(
       medias,
       initialIndex: initialIndex,
@@ -395,6 +418,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         currentIndex: Value(max(state.currentIndex, 0)),
       ),
     );
+    AppLogger.log.i('[AudioPlayer.load] Playlist opened successfully');
   }
 
   Future<void> swapActiveSource() async {
