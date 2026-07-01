@@ -268,8 +268,8 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
                 )
               ]
             : const [],
-        images: video.thumbnails.isNotEmpty
-            ? [DeeMusiqImageObject(url: video.thumbnails.first.url.toString())]
+        images: video.thumbnails.highResUrl.isNotEmpty
+            ? [DeeMusiqImageObject(url: video.thumbnails.highResUrl)]
             : const [],
         albumType: DeeMusiqAlbumType.single,
       ),
@@ -800,8 +800,8 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
           title: video.title,
           artists: [video.author],
           duration: video.duration ?? Duration.zero,
-          thumbnail: video.thumbnails.isNotEmpty
-              ? video.thumbnails.first.url.toString()
+          thumbnail: video.thumbnails.highResUrl.isNotEmpty
+              ? video.thumbnails.highResUrl
               : null,
           externalUri: "$_ytPrefix${video.id.value}",
         );
