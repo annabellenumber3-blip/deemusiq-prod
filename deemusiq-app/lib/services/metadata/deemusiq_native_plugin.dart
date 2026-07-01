@@ -244,7 +244,8 @@ class _NativeSearch extends MetadataPluginSearchEndpoint {
           albums: const [], artists: const [], playlists: const [], tracks: const []);
     }
     final d = await api.search(query, "all", 20);
-    if (d == null) return emptySearch;
+    if (d == null) return DeeMusiqSearchResponseObject(
+        albums: const [], artists: const [], playlists: const [], tracks: const []);
     return DeeMusiqSearchResponseObject(
       albums: _list(d["albums"]).map(_simpleAlbum).toList(),
       artists: _list(d["artists"]).map(_fullArtist).toList(),

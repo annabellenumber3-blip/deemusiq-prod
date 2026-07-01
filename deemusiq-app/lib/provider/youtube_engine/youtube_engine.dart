@@ -4,6 +4,7 @@ import 'package:deemusiq/provider/user_preferences/user_preferences_provider.dar
 import 'package:deemusiq/services/youtube_engine/newpipe_engine.dart';
 import 'package:deemusiq/services/youtube_engine/youtube_explode_engine.dart';
 import 'package:deemusiq/services/youtube_engine/yt_dlp_engine.dart';
+import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
 
 final youtubeEngineProvider = Provider((ref) {
   final engineMode = ref.watch(

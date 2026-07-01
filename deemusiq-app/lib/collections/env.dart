@@ -37,11 +37,16 @@ abstract class Env {
   static String discordAppId = "1176718791388975124";
 
   /// GitHub repo for update checks (org/repo format).
-  /// Override via .env: UPDATE_REPO=s-b-repo/deemusiq
-  @EnviedField(varName: 'UPDATE_REPO', defaultValue: 'deemusiq/deemusiq')
-  static final String updateRepo = _Env.updateRepo;
+  /// Set via --dart-define=DEEMUSIQ_UPDATE_REPO=org/repo
+  static const String updateRepo = String.fromEnvironment(
+    'DEEMUSIQ_UPDATE_REPO',
+    defaultValue: 'deemusiq/deemusiq',
+  );
 
   /// SHA-256 hash of the current release APK, used by the integrity checker.
   /// Set via --dart-define=DEEMUSIQ_APK_SHA256=...
-  static const String apkSha256 = String.fromEnvironment('DEEMUSIQ_APK_SHA256', defaultValue: '');
+  static const String apkSha256 = String.fromEnvironment(
+    'DEEMUSIQ_APK_SHA256',
+    defaultValue: '',
+  );
 }
