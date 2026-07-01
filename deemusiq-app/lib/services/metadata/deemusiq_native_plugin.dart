@@ -17,6 +17,7 @@ import 'package:deemusiq/services/metadata/endpoints/user.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
 import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' show Video;
 import 'package:deemusiq/services/audio_player/audio_quality.dart';
 import 'package:deemusiq/services/connectivity/engine_failover.dart';
 import 'package:deemusiq/services/connectivity/connection_checker.dart';

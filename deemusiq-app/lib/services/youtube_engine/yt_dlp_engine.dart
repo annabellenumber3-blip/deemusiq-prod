@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:collection/collection.dart';
 import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 import 'package:deemusiq/utils/platform.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:yt_dlp_dart/yt_dlp_dart.dart';
