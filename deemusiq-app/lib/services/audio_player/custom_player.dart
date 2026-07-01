@@ -51,6 +51,8 @@ class CustomPlayer extends Player {
     ];
     PackageInfo.fromPlatform().then((packageInfo) {
       _packageName = packageInfo.packageName;
+    }).catchError((e, stack) {
+      AppLogger.reportError(e, stack, 'Failed to get package info');
     });
     if (kIsAndroid) {
       _androidAudioManager = AndroidAudioManager();

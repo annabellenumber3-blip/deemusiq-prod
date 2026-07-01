@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 extension ChunkDownloaderDioExtension on Dio {
   Future<Response> chunkDownload(
@@ -43,8 +44,9 @@ extension ChunkDownloaderDioExtension on Dio {
             followRedirects: true,
           ),
         );
-      } catch (_) {
-        // Some servers reject HEAD -> ignore
+      } catch (e, stack) {
+        // Some servers reject HEAD -> ignore, but log for diagnostics
+        AppLogger.log.d('HEAD request failed (non-critical): $urlPath — ${e.toString()}');
       }
 
       final lengthStr = headResp?.headers[lengthHeader]?.first;
@@ -155,7 +157,8 @@ extension ChunkDownloaderDioExtension on Dio {
         statusCode: 200,
         statusMessage: 'Chunked download completed ($connections connections)',
       );
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Chunk download failed: $urlPath — ${e.toString()}');
       if (deleteOnError) {
         if (await targetFile.exists()) await targetFile.delete();
         if (await tempSaveDir.exists()) {

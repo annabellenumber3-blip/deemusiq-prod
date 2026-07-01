@@ -112,7 +112,9 @@ class AudioEqualizer {
     if (_nativePlayer == null) return;
     try {
       _nativePlayer.setProperty('af', '');
-    } catch (_) {}
+    } catch (e, stack) {
+      AppLogger.reportError(e, stack, 'Equalizer clear filter failed');
+    }
   }
 
   /// All presets, ported from VLC's default equalizer configuration.

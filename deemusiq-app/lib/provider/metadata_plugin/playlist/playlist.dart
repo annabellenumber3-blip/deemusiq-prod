@@ -6,6 +6,7 @@ import 'package:deemusiq/provider/metadata_plugin/core/user.dart';
 import 'package:deemusiq/provider/metadata_plugin/utils/common.dart';
 import 'package:deemusiq/services/metadata/errors/exceptions.dart';
 import 'package:deemusiq/services/metadata/metadata.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 class MetadataPluginPlaylistNotifier
     extends AutoDisposeFamilyAsyncNotifier<DeeMusiqFullPlaylistObject, String> {
@@ -51,7 +52,8 @@ class MetadataPluginPlaylistNotifier
         state = AsyncValue.data(playlist);
       }
       ref.invalidate(metadataPluginSavedPlaylistsProvider);
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to create playlist: ${e.toString()}');
       onError?.call(e);
       rethrow;
     }
@@ -93,7 +95,8 @@ class MetadataPluginPlaylistNotifier
       await ref
           .read(metadataPluginSavedPlaylistsProvider.notifier)
           .addTracks(arg, trackIds);
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to add tracks to playlist: ${e.toString()}');
       onError?.call(e);
       rethrow;
     }
@@ -107,7 +110,8 @@ class MetadataPluginPlaylistNotifier
       await ref
           .read(metadataPluginSavedPlaylistsProvider.notifier)
           .removeTracks(arg, trackIds);
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to remove tracks from playlist: ${e.toString()}');
       onError?.call(e);
       rethrow;
     }

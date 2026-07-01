@@ -2,6 +2,7 @@ import 'package:riverpod/riverpod.dart';
 import 'package:deemusiq/models/metadata/metadata.dart';
 import 'package:deemusiq/provider/metadata_plugin/core/auth.dart';
 import 'package:deemusiq/provider/metadata_plugin/utils/paginated.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 class MetadataPluginSavedAlbumNotifier
     extends PaginatedAsyncNotifier<DeeMusiqSimpleAlbumObject> {
@@ -36,7 +37,8 @@ class MetadataPluginSavedAlbumNotifier
     );
     try {
       await (await metadataPlugin).album.save(albums.map((e) => e.id).toList());
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to save albums: ${e.toString()}');
       state = AsyncData(oldState!);
       rethrow;
     }
@@ -59,7 +61,8 @@ class MetadataPluginSavedAlbumNotifier
     );
     try {
       await (await metadataPlugin).album.unsave(albumIds);
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to unsave albums: ${e.toString()}');
       state = AsyncData(oldState!);
       rethrow;
     }

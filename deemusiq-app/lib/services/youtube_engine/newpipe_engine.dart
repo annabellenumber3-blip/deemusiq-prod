@@ -4,6 +4,7 @@ import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
 import 'package:deemusiq/utils/platform.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 class NewPipeEngine implements YouTubeEngine {
   static bool get isAvailableForPlatform => kIsAndroid || kIsDesktop;

@@ -6,6 +6,7 @@ import 'package:deemusiq/provider/metadata_plugin/metadata_plugin_provider.dart'
 import 'package:deemusiq/provider/metadata_plugin/tracks/playlist.dart';
 import 'package:deemusiq/provider/metadata_plugin/utils/paginated.dart';
 import 'package:deemusiq/services/metadata/errors/exceptions.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 class MetadataPluginSavedPlaylistsNotifier
     extends PaginatedAsyncNotifier<DeeMusiqSimplePlaylistObject> {
@@ -59,7 +60,8 @@ class MetadataPluginSavedPlaylistsNotifier
 
     try {
       await (await metadataPlugin).playlist.save(playlist.id);
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to save playlist: ${e.toString()}');
       state = AsyncData(oldState!);
       rethrow;
     }
@@ -77,7 +79,8 @@ class MetadataPluginSavedPlaylistsNotifier
 
     try {
       await (await metadataPlugin).playlist.unsave(playlist.id);
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to unsave playlist: ${e.toString()}');
       state = AsyncData(oldState!);
       rethrow;
     }
@@ -92,7 +95,8 @@ class MetadataPluginSavedPlaylistsNotifier
       ref.invalidateSelf();
       ref.invalidate(metadataPluginIsSavedPlaylistProvider(playlistId));
       ref.invalidate(metadataPluginPlaylistTracksProvider(playlistId));
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to delete playlist: ${e.toString()}');
       state = oldState;
       rethrow;
     }

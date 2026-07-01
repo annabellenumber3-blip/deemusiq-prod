@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 
@@ -17,6 +18,7 @@ import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
 import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
 import 'package:deemusiq/services/audio_player/audio_quality.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 /// The built-in "plugin" identity DeeMusiq presents in place of any external
 /// metadata provider. It carries no bytecode — the endpoints are native Dart
@@ -58,6 +60,9 @@ String _encodeSource(Map? source) {
 // ── Backend client ───────────────────────────────────────────────────────────
 
 class _CatalogApi {
+  static const _maxRetries = 3;
+  static const _baseDelayMs = 500;
+
   Dio _client() => Dio(
         BaseOptions(
           baseUrl: PaymentGatewayConfig.backendBaseUrl,
@@ -72,8 +77,27 @@ class _CatalogApi {
     String path, {
     Map<String, dynamic>? query,
   }) async {
-    final res = await _client().get(path, queryParameters: query);
-    return (res.data as Map).cast<String, dynamic>();
+    int attempt = 0;
+    while (true) {
+      try {
+        final res = await _client().get(path, queryParameters: query);
+        return (res.data as Map).cast<String, dynamic>();
+      } catch (e, stack) {
+        attempt++;
+        if (attempt >= _maxRetries) {
+          AppLogger.log.w('Catalog API failed after $_maxRetries attempts: $path — ${e.toString()}');
+          AppLogger.reportError(e, stack);
+          rethrow;
+        }
+        // Exponential backoff with jitter
+        final delay = Duration(
+          milliseconds: _baseDelayMs * pow(2, attempt - 1).toInt() +
+              Random().nextInt(200),
+        );
+        AppLogger.log.w('Catalog API attempt $attempt/$_maxRetries failed: $path — retrying in ${delay.inMilliseconds}ms');
+        await Future.delayed(delay);
+      }
+    }
   }
 
   Future<Map<String, dynamic>> search(String q, String type, int limit) =>
@@ -259,26 +283,48 @@ class _NativeAlbum extends MetadataPluginAlbumEndpoint {
 
   @override
   Future<DeeMusiqFullAlbumObject> getAlbum(String id) async {
-    final a = await api.album(id);
-    final artistRef = a["artist"] as Map?;
-    final tracks = _list(a["tracks"]);
-    return DeeMusiqFullAlbumObject(
-      id: (a["id"] ?? "").toString(),
-      name: (a["title"] ?? "").toString(),
-      artists: artistRef != null ? [_simpleArtistFromRef(artistRef)] : const [],
-      images: _images(a["coverUrl"] as String?),
-      releaseDate: (a["releaseDate"] ?? "").toString(),
-      externalUri: "deemusiq:album:$id",
-      totalTracks: tracks.length,
-      albumType: _albumType(a["albumType"] as String?),
-    );
+    try {
+      final a = await api.album(id);
+      final artistRef = a["artist"] as Map?;
+      final tracks = _list(a["tracks"]);
+      return DeeMusiqFullAlbumObject(
+        id: (a["id"] ?? "").toString(),
+        name: (a["title"] ?? "").toString(),
+        artists: artistRef != null ? [_simpleArtistFromRef(artistRef)] : const [],
+        images: _images(a["coverUrl"] as String?),
+        releaseDate: (a["releaseDate"] ?? "").toString(),
+        externalUri: "deemusiq:album:$id",
+        totalTracks: tracks.length,
+        albumType: _albumType(a["albumType"] as String?),
+      );
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch album $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      // Graceful degradation: return a minimal album object
+      return DeeMusiqFullAlbumObject(
+        id: id,
+        name: "Unknown Album",
+        artists: const [],
+        images: const [],
+        releaseDate: "",
+        externalUri: "deemusiq:album:$id",
+        totalTracks: 0,
+        albumType: DeeMusiqAlbumType.album,
+      );
+    }
   }
 
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqFullTrackObject>> tracks(
       String id, {int? offset, int? limit}) async {
-    final a = await api.album(id);
-    return _page(_list(a["tracks"]).map(_track).toList());
+    try {
+      final a = await api.album(id);
+      return _page(_list(a["tracks"]).map(_track).toList());
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch album tracks for $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return _page(const <DeeMusiqFullTrackObject>[]);
+    }
   }
 
   @override
@@ -307,22 +353,45 @@ class _NativeArtist extends MetadataPluginArtistEndpoint {
 
   @override
   Future<DeeMusiqFullArtistObject> getArtist(String id) async {
-    final a = await api.artist(id);
-    return _fullArtist(a);
+    try {
+      final a = await api.artist(id);
+      return _fullArtist(a);
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch artist $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return DeeMusiqFullArtistObject(
+        id: id,
+        name: "Unknown Artist",
+        externalUri: "deemusiq:artist:$id",
+        images: const [],
+      );
+    }
   }
 
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqFullTrackObject>> topTracks(
       String id, {int? offset, int? limit}) async {
-    final a = await api.artist(id);
-    return _page(_list(a["topTracks"]).map(_track).toList());
+    try {
+      final a = await api.artist(id);
+      return _page(_list(a["topTracks"]).map(_track).toList());
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch top tracks for artist $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return _page(const <DeeMusiqFullTrackObject>[]);
+    }
   }
 
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqSimpleAlbumObject>> albums(
       String id, {int? offset, int? limit}) async {
-    final a = await api.artist(id);
-    return _page(_list(a["albums"]).map(_simpleAlbum).toList());
+    try {
+      final a = await api.artist(id);
+      return _page(_list(a["albums"]).map(_simpleAlbum).toList());
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch albums for artist $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return _page(const <DeeMusiqSimpleAlbumObject>[]);
+    }
   }
 
   @override
@@ -342,22 +411,41 @@ class _NativePlaylist extends MetadataPluginPlaylistEndpoint {
 
   @override
   Future<DeeMusiqFullPlaylistObject> getPlaylist(String id) async {
-    final p = await api.playlist(id);
-    return DeeMusiqFullPlaylistObject(
-      id: (p["id"] ?? "").toString(),
-      name: (p["title"] ?? "").toString(),
-      description: (p["description"] ?? "").toString(),
-      externalUri: "deemusiq:playlist:$id",
-      owner: _deemusiqOwner,
-      images: _images(p["coverUrl"] as String?),
-    );
+    try {
+      final p = await api.playlist(id);
+      return DeeMusiqFullPlaylistObject(
+        id: (p["id"] ?? "").toString(),
+        name: (p["title"] ?? "").toString(),
+        description: (p["description"] ?? "").toString(),
+        externalUri: "deemusiq:playlist:$id",
+        owner: _deemusiqOwner,
+        images: _images(p["coverUrl"] as String?),
+      );
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch playlist $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return DeeMusiqFullPlaylistObject(
+        id: id,
+        name: "Unknown Playlist",
+        description: "",
+        externalUri: "deemusiq:playlist:$id",
+        owner: _deemusiqOwner,
+        images: const [],
+      );
+    }
   }
 
   @override
   Future<DeeMusiqPaginationResponseObject<DeeMusiqFullTrackObject>> tracks(
       String id, {int? offset, int? limit}) async {
-    final p = await api.playlist(id);
-    return _page(_list(p["tracks"]).map(_track).toList());
+    try {
+      final p = await api.playlist(id);
+      return _page(_list(p["tracks"]).map(_track).toList());
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch playlist tracks for $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return _page(const <DeeMusiqFullTrackObject>[]);
+    }
   }
 
   // User-created playlists aren't supported by the catalog backend yet.
@@ -394,8 +482,30 @@ class _NativeTrack extends MetadataPluginTrackEndpoint {
 
   @override
   Future<DeeMusiqFullTrackObject> getTrack(String id) async {
-    final t = await api.track(id);
-    return _track(t);
+    try {
+      final t = await api.track(id);
+      return _track(t);
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to fetch track $id: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      return DeeMusiqTrackObject.full(
+        id: id,
+        name: "Unknown Track",
+        externalUri: "",
+        artists: const [],
+        album: DeeMusiqSimpleAlbumObject(
+          id: "",
+          name: "",
+          externalUri: "",
+          artists: const [],
+          images: const [],
+          albumType: DeeMusiqAlbumType.album,
+        ),
+        durationMs: 0,
+        isrc: "",
+        explicit: false,
+      ) as DeeMusiqFullTrackObject;
+    }
   }
 
   @override
@@ -555,20 +665,26 @@ class _NativeAudioSource extends MetadataPluginAudioSourceEndpoint {
     final uri = match.externalUri;
     if (uri.startsWith(_ytPrefix)) {
       final videoId = uri.substring(_ytPrefix.length);
-      final manifest = await youtubeEngine.getStreamManifest(videoId);
-      final filteredStreams = YouTubeAudioQualityService.filterStreams(
-        manifest.audioOnly,
-      );
-      return filteredStreams
-          .map(
-            (s) => DeeMusiqAudioSourceStreamObject(
-              url: s.url.toString(),
-              container: s.container.name,
-              type: DeeMusiqMediaCompressionType.lossy,
-              bitrate: s.bitrate.bitsPerSecond.toDouble(),
-            ),
-          )
-          .toList();
+      try {
+        final manifest = await youtubeEngine.getStreamManifest(videoId);
+        final filteredStreams = YouTubeAudioQualityService.filterStreams(
+          manifest.audioOnly,
+        );
+        return filteredStreams
+            .map(
+              (s) => DeeMusiqAudioSourceStreamObject(
+                url: s.url.toString(),
+                container: s.container.name,
+                type: DeeMusiqMediaCompressionType.lossy,
+                bitrate: s.bitrate.bitsPerSecond.toDouble(),
+              ),
+            )
+            .toList();
+      } catch (e, stack) {
+        AppLogger.log.w('Failed to get YouTube streams for $videoId: ${e.toString()}');
+        AppLogger.reportError(e, stack);
+        return const [];
+      }
     }
     if (uri.startsWith(_urlPrefix)) {
       final url = uri.substring(_urlPrefix.length);

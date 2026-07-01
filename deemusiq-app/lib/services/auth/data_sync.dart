@@ -23,8 +23,6 @@ class DataSyncService {
       PaymentGatewayConfig.backendBaseUrl.isNotEmpty;
 
   /// Hash a song/track ID using SHA-256. The raw ID never leaves the device.
-  static final _sha256 = Sha256();
-
   static String hashSongId(String songId) {
     final bytes = utf8.encode(songId);
     final hash = crypto.sha256.convert(bytes);

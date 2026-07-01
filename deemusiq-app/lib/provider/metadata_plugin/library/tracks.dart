@@ -3,6 +3,7 @@ import 'package:deemusiq/models/metadata/metadata.dart';
 import 'package:deemusiq/provider/metadata_plugin/core/auth.dart';
 import 'package:deemusiq/provider/metadata_plugin/utils/common.dart';
 import 'package:deemusiq/provider/metadata_plugin/utils/paginated.dart';
+import 'package:deemusiq/services/logger/logger.dart';
 
 class MetadataPluginSavedTracksNotifier
     extends AutoDisposePaginatedAsyncNotifier<DeeMusiqFullTrackObject> {
@@ -43,7 +44,8 @@ class MetadataPluginSavedTracksNotifier
 
     try {
       await (await metadataPlugin).track.save(tracks.map((e) => e.id).toList());
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to save tracks: ${e.toString()}');
       state = AsyncData(oldState!);
       rethrow;
     }
@@ -69,7 +71,8 @@ class MetadataPluginSavedTracksNotifier
       await (await metadataPlugin)
           .track
           .unsave(tracks.map((e) => e.id).toList());
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to unsave tracks: ${e.toString()}');
       state = AsyncData(oldState!);
       rethrow;
     }

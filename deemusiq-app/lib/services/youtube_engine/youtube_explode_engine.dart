@@ -6,6 +6,7 @@ import 'package:deemusiq/services/youtube_engine/youtube_engine.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
 import 'dart:async';
+import 'package:deemusiq/services/logger/logger.dart';
 
 /// It contains methods that are computationally expensive
 class IsolatedYoutubeExplode {
@@ -159,41 +160,47 @@ class YouTubeExplodeEngine implements YouTubeEngine {
   Future<StreamManifest> getStreamManifest(String videoId) async {
     await IsolatedYoutubeExplode.initialize();
 
-    final streamManifest = await _youtubeExplode.manifest(
-      videoId,
-      requireWatchPage: false,
-      ytClients: [
-        YoutubeApiClient.ios,
-        YoutubeApiClient.androidVr,
-        YoutubeApiClient.android,
-      ],
-    );
+    try {
+      final streamManifest = await _youtubeExplode.manifest(
+        videoId,
+        requireWatchPage: false,
+        ytClients: [
+          YoutubeApiClient.ios,
+          YoutubeApiClient.androidVr,
+          YoutubeApiClient.android,
+        ],
+      );
 
-    final audioStreams = streamManifest.audioOnly.where(
-      (stream) => stream.bitrate.bitsPerSecond >= 40960,
-    );
+      final audioStreams = streamManifest.audioOnly.where(
+        (stream) => stream.bitrate.bitsPerSecond >= 40960,
+      );
 
-    return StreamManifest(
-      audioStreams.map(
-        (stream) => AudioOnlyStreamInfo(
-          stream.videoId,
-          stream.tag,
-          stream.url,
-          stream.container,
-          stream.size,
-          stream.bitrate,
-          stream.audioCodec,
-          switch (stream.bitrate.bitsPerSecond) {
-            > 130 * 1024 => "high",
-            > 64 * 1024 => "medium",
-            _ => "low",
-          },
-          stream.fragments,
-          stream.codec,
-          stream.audioTrack,
+      return StreamManifest(
+        audioStreams.map(
+          (stream) => AudioOnlyStreamInfo(
+            stream.videoId,
+            stream.tag,
+            stream.url,
+            stream.container,
+            stream.size,
+            stream.bitrate,
+            stream.audioCodec,
+            switch (stream.bitrate.bitsPerSecond) {
+              > 130 * 1024 => "high",
+              > 64 * 1024 => "medium",
+              _ => "low",
+            },
+            stream.fragments,
+            stream.codec,
+            stream.audioTrack,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e, stack) {
+      AppLogger.log.w('YouTubeExplode: Failed to get stream manifest for $videoId: ${e.toString()}');
+      AppLogger.reportError(e, stack);
+      rethrow;
+    }
   }
 
   @override

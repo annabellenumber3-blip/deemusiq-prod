@@ -2,6 +2,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:deemusiq/services/wallet/wallet_api.dart';
 import 'package:deemusiq/services/wallet/payment_service.dart'
     show PaymentGatewayConfig;
+import 'package:deemusiq/services/logger/logger.dart';
 
 /// A single recommended track as returned from the backend.
 class RecommendedTrack {
@@ -122,7 +123,9 @@ class RecommendationsNotifier extends StateNotifier<RecommendationsState> {
         isLoading: false,
         generatedAt: generatedAt,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to load recommendations: ${e.toString()}');
+      AppLogger.reportError(e, stack);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -148,7 +151,9 @@ class RecommendationsNotifier extends StateNotifier<RecommendationsState> {
         isRefreshing: false,
         generatedAt: generatedAt,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      AppLogger.log.w('Failed to refresh recommendations: ${e.toString()}');
+      AppLogger.reportError(e, stack);
       state = state.copyWith(
         isRefreshing: false,
         error: e.toString(),
