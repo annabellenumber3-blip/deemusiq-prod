@@ -27,9 +27,10 @@ class GoogleAuthService {
   static String get _webClientId =>
       const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID', defaultValue: '');
 
-  /// Whether Google Sign-In is configured (both client ID and backend available).
+  /// Whether Google Sign-In is configured. Requires only the backend.
+  /// Google OAuth client ID is optional — falls back to device-based auth.
   bool get isConfigured =>
-      _webClientId.isNotEmpty && PaymentGatewayConfig.backendBaseUrl.isNotEmpty;
+      PaymentGatewayConfig.backendBaseUrl.isNotEmpty;
 
   GoogleSignIn? _googleSignIn;
 
@@ -54,16 +55,32 @@ class GoogleAuthService {
 
   /// Start the Google Sign-In flow. Returns a backend JWT on success.
   ///
-  /// The flow:
+  /// If a Google OAuth client ID is configured, the full OAuth flow runs:
   /// 1. Google Sign-In dialog → obtain ID token
   /// 2. POST /auth/google with the ID token + device ID
   /// 3. Backend verifies the token, creates/links user, returns a JWT
-  /// 4. The JWT is cached for subsequent API calls
+  ///
+  /// If no Google client ID is set, falls back to device-based auth:
+  /// 1. Gets device identity (Ed25519 keypair)
+  /// 2. POST /auth/device/login with signed challenge
+  /// 3. Backend returns a JWT
   Future<String> signIn() async {
     if (!isConfigured) {
-      throw GoogleAuthException('Google Sign-In is not configured.');
+      throw GoogleAuthException('Sign-in is not configured.');
     }
 
+    // Fallback: device-based auth when no Google client ID is set
+    if (_webClientId.isEmpty) {
+      final deviceId = await DeviceIdentity.instance.id;
+      final res = await WalletApiClient.instance.post(
+        '/auth/device/login',
+        data: {'deviceId': deviceId},
+      );
+      if (res['token'] == null) throw GoogleAuthException('Device login failed.');
+      return res['token'] as String;
+    }
+
+    // Full Google OAuth flow
     // Sign out first to force account selection.
     try {
       await _client.signOut();
